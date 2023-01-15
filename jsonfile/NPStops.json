@@ -1,0 +1,81 @@
+{
+    "value": [
+        {
+            "BusStopCode": "1",
+            "RoadName": "Dunearn Rd",
+            "Description": "King Albert Park",
+            "Latitude": 1.3365156413692878,
+            "Longitude": 103.78278794804254
+        },
+		{
+            "BusStopCode": "2",
+            "RoadName": "Clementi Rd",
+            "Description": "Main Entrance",
+            "Latitude": 1.3327930713846308,
+            "Longitude": 103.77771893587253
+        },
+		{
+            "BusStopCode": "3",
+            "RoadName": "Clementi Rd",
+            "Description": "Block 23",
+            "Latitude": 1.3339219201675232,
+            "Longitude": 103.77574132061896
+        },
+		{
+            "BusStopCode": "4",
+            "RoadName": "Clementi Rd",
+            "Description": "Sports Hall",
+            "Latitude": 1.3350826567868566,
+            "Longitude": 103.7754223503998
+        },
+		{
+            "BusStopCode": "5",
+            "RoadName": "Clementi Rd",
+            "Description": "SIT",
+            "Latitude": 1.3343686930989707,
+            "Longitude": 103.77435631203087
+        },
+		{
+            "BusStopCode": "6",
+            "RoadName": "Clementi Rd",
+            "Description": "Block 44",
+            "Latitude": 1.3329522845882338,
+            "Longitude": 103.77145520892851
+        },
+		{
+            "BusStopCode": "7",
+            "RoadName": "Clementi Rd",
+            "Description": "Block 37",
+            "Latitude": 1.3327697559194807,
+            "Longitude": 103.77323977064727
+        },
+		{
+            "BusStopCode": "8",
+            "RoadName": "Clementi Rd",
+            "Description": "Makan Place",
+            "Latitude": 1.3324019134469296,
+            "Longitude": 103.7747380910866
+        },
+		{
+            "BusStopCode": "9",
+            "RoadName": "Clementi Rd",
+            "Description": "Health Science",
+            "Latitude": 1.3298012679376825,
+            "Longitude": 103.77465550100018
+        },
+		{
+            "BusStopCode": "10",
+            "RoadName": "Clementi Rd",
+            "Description": "LSCT",
+            "Latitude": 1.3311533369747413,
+            "Longitude": 103.77490110804173
+        },
+		{
+            "BusStopCode": "11",
+            "RoadName": "Clementi Rd",
+            "Description": "Block 72",
+            "Latitude": 1.3312394356934047,
+            "Longitude": 103.77644173403719
+		}
+		]
+}
