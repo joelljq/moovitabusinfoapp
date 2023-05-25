@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:moovitainfo/services/currentlocationclass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as rootBundle;
 import 'package:flutter/services.dart';
@@ -120,6 +120,21 @@ class _MyAppState extends State<MyApp> {
 
   double percentage = 0.0;
   Color cap = Colors.green;
+
+  Future<List<CurrentLocationClass>> ReadCurrentLocation() async {
+    //read json file
+    final jsondata =
+    await rootBundle.rootBundle.loadString('jsonfile/tracking.json');
+    //decode json data as list
+    var currentloc = <CurrentLocationClass>[];
+    print("Success");
+
+    Map<String, dynamic> productsJson = json.decode(jsondata);
+    for (var productJson in productsJson['value']) {
+      currentloc.add(CurrentLocationClass.fromJson(productJson));
+    }
+    return currentloc;
+  }
 
   percentaged() {
     int Heads = int.parse(HC);
