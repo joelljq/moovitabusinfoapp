@@ -104,6 +104,7 @@ class _MyAppState extends State<MyApp> {
   late String ETA;
   int etaa = 0;
   int etaaa = 0;
+  int cureta = 0;
   int currentbsindex = 0;
   int secbsindex = 0;
   int thirdbsindex = 0;
@@ -126,11 +127,9 @@ class _MyAppState extends State<MyApp> {
   Future<List<CurrentLocationClass>> ReadCurrentLocation() async {
     //read json file
     final jsondata =
-    await rootBundle.rootBundle.loadString('jsonfile/tracking.json');
+        await rootBundle.rootBundle.loadString('jsonfile/tracking.json');
     //decode json data as list
     var currentloc = <CurrentLocationClass>[];
-    print("Success");
-
     Map<String, dynamic> productsJson = json.decode(jsondata);
     for (var productJson in productsJson['value']) {
       currentloc.add(CurrentLocationClass.fromJson(productJson));
@@ -174,10 +173,9 @@ class _MyAppState extends State<MyApp> {
   void getPolyPoints() async {
     List<LatLng> polylineCoordinates = [];
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      'AIzaSyCPOOzOV-23KSBWcTYgw0Jo4WxQQTjoUBM',
+      'AIzaSyAjpdWMmL1o09QOW48v-ZkMwNzr8LWLrYM',
       PointLatLng(BusStop['lat'], BusStop['lng']),
-      PointLatLng(
-          curlat, curlng),
+      PointLatLng(curlat, curlng),
       travelMode: TravelMode.driving,
     );
     if (result.points.isNotEmpty) {
@@ -267,7 +265,6 @@ class _MyAppState extends State<MyApp> {
             json1 = message;
             Map<String, dynamic> jsonBS = jsonDecode(message);
             message1 = jsonBS["Name"];
-            print(message1);
             getdisplayindex(jsonBS["Name"]);
           });
         } else if (topic == '/ETA') {
@@ -288,6 +285,12 @@ class _MyAppState extends State<MyApp> {
   getBusStatus(String ETAA) async {
     int index = 0;
     etaa = nearestMinute(ETAA);
+    cureta = nearestMinute(ETAA);
+    if (cureta > 2) {
+      cureta = 2;
+    } else {
+      cureta = cureta;
+    }
     etaaa = etaa;
     if (message1.isNotEmpty || CurrentBS.isNotEmpty) {
       if (etaa != 0) {
@@ -368,38 +371,34 @@ class _MyAppState extends State<MyApp> {
 
   getcurrentbusindex(int ETA) {
     if (ETA > 0) {
-      if (mybs != 1){
+      if (mybs != 1) {
         mapbs = mybs - 1;
         busstatus = 'Bus is coming from ${bslist[mapbs]} in ${ETA} mins';
-      }
-      else{
+      } else {
         mapbs = mybs;
         busstatus = 'Bus is coming from ${bslist[mapbs]} in ${ETA} mins';
       }
-      getPolyPoints();
+      getbusposition();
     } else {
       mapbs = mybs;
       busstatus = 'Bus has arrived at ${bslist[mapbs - 1]}';
-      getPolyPoints();
+      getbusposition();
     }
   }
-  getbusposition(){
-    if (etaa > 0){
-      ReadCurrentLocation().then((value) {
-        setState(() {
-          buspos.addAll(value);
-        });
-      });
-      int index = buspos.indexWhere((pos) => pos.route == "${currentbsindex.toString()}.${etaa.toString()}");
-      curlat = buspos[index].lat;
-      curlng = buspos[index].lng;
-    }
+
+  getbusposition() async{
+    await ReadCurrentLocation();
+    int index = buspos.indexWhere((buspos) =>
+        buspos.Route == "${currentbsindex.toString()}.${cureta.toString()}");
+    curlat = buspos[index].lat;
+    curlng = buspos[index].lng;
+    getPolyPoints();
   }
+
   void API() {
     getCurrentBS();
     getCurrentETA();
     getHeadCount();
-    getbusposition();
     bstimer = new Timer.periodic(Duration(seconds: 1), (_) {
       getCurrentBS();
     });
@@ -408,9 +407,6 @@ class _MyAppState extends State<MyApp> {
     });
     hctimer = new Timer.periodic(Duration(seconds: 1), (_) {
       getHeadCount();
-    });
-    curtimer = new Timer.periodic(Duration(seconds: 1), (_) {
-      getbusposition();
     });
   }
 
@@ -478,6 +474,11 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
+    ReadCurrentLocation().then((value) {
+      setState(() {
+        buspos.addAll(value);
+      });
+    });
     timeCheck();
     timer = new Timer.periodic(Duration(seconds: 60), (_) => timeCheck());
     super.initState();
@@ -698,10 +699,10 @@ class _MyAppState extends State<MyApp> {
                             setState(() {
                               mapController.animateCamera(
                                   CameraUpdate.newLatLngZoom(
-                                      coordinates[mapbs - 1], 18));
+                                      LatLng(curlat, curlng), 18));
                             });
                             mapController.showMarkerInfoWindow(
-                                MarkerId(bslist[mapbs - 1]));
+                                MarkerId("CurrentBusPos"));
                           },
                           child: Card(
                             child: Padding(
@@ -789,7 +790,7 @@ class _MyAppState extends State<MyApp> {
           onTap: () {
             setState(() {
               mapController.animateCamera(
-                  CameraUpdate.newLatLngZoom(coordinates[mapbs - 1], 14));
+                  CameraUpdate.newLatLngZoom(LatLng(curlat, curlng), 14));
             });
           }));
     });

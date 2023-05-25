@@ -1,17 +1,17 @@
 class CurrentLocationClass {
-  late String route;
+  late String Route;
   late double lat;
   late double lng;
 // constructor
   CurrentLocationClass({
-    required this.route,
+    required this.Route,
     required this.lat,
-    required this.lng,
+    required this.lng
   });
   //method that assign values to respective datatype variables
   CurrentLocationClass.fromJson(Map<String, dynamic> json) {
-    route = json['Route'];
-    lat = json['Latitude'];
-    lng = json['Longitude'];
+    Route = json['Route'];
+    lat = double.parse(json['Latitude'].toString());
+    lng = double.parse(json['Longitude'].toString());
   }
 }
