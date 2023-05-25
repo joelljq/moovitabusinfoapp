@@ -117,7 +117,9 @@ class _MyAppState extends State<MyApp> {
   Set<Marker> markers = new Set();
   bool timechecked = false;
   bool _isDark = false;
-
+  List<CurrentLocationClass> buspos = [];
+  double curlat = 0.0;
+  double curlng = 0.0;
   double percentage = 0.0;
   Color cap = Colors.green;
 
@@ -175,7 +177,7 @@ class _MyAppState extends State<MyApp> {
       'AIzaSyCPOOzOV-23KSBWcTYgw0Jo4WxQQTjoUBM',
       PointLatLng(BusStop['lat'], BusStop['lng']),
       PointLatLng(
-          coordinates[mapbs - 1].latitude, coordinates[mapbs - 1].longitude),
+          curlat, curlng),
       travelMode: TravelMode.driving,
     );
     if (result.points.isNotEmpty) {
@@ -381,11 +383,23 @@ class _MyAppState extends State<MyApp> {
       getPolyPoints();
     }
   }
-
+  getbusposition(){
+    if (etaa > 0){
+      ReadCurrentLocation().then((value) {
+        setState(() {
+          buspos.addAll(value);
+        });
+      });
+      int index = buspos.indexWhere((pos) => pos.route == "${currentbsindex.toString()}.${etaa.toString()}");
+      curlat = buspos[index].lat;
+      curlng = buspos[index].lng;
+    }
+  }
   void API() {
     getCurrentBS();
     getCurrentETA();
     getHeadCount();
+    getbusposition();
     bstimer = new Timer.periodic(Duration(seconds: 1), (_) {
       getCurrentBS();
     });
@@ -394,6 +408,9 @@ class _MyAppState extends State<MyApp> {
     });
     hctimer = new Timer.periodic(Duration(seconds: 1), (_) {
       getHeadCount();
+    });
+    curtimer = new Timer.periodic(Duration(seconds: 1), (_) {
+      getbusposition();
     });
   }
 
@@ -457,6 +474,7 @@ class _MyAppState extends State<MyApp> {
   late Timer etatimer;
   late Timer hctimer;
   late Timer rtctimer;
+  late Timer curtimer;
 
   @override
   void initState() {
@@ -760,8 +778,8 @@ class _MyAppState extends State<MyApp> {
             });
           }));
       markers.add(Marker(
-          markerId: MarkerId(bslist[mapbs - 1]),
-          position: coordinates[mapbs - 1],
+          markerId: MarkerId("CurrentBusPos"),
+          position: LatLng(curlat, curlng),
           //position of marker
           infoWindow: InfoWindow(
               //popup info
