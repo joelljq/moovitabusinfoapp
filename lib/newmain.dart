@@ -11,8 +11,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:moovitainfo/services/busstopclass.dart';
 import 'package:moovitainfo/services/currentlocationclass.dart';
 import 'package:moovitainfo/screens/bsscreen.dart';
+import 'package:moovitainfo/services/notif.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  NotificationService().initNotification();
   runApp(NewMain());
 }
 
@@ -409,7 +412,25 @@ class _NewMainState extends State<NewMain> {
   late Timer screentimer;
 
   List<Widget> _screens = [];
-
+  updatescreen()async{
+    await loadmapstyle();
+    setState(() {
+      _screens = [
+        BSScreen(
+          darkStyle: _darkStyle,
+          busstop: bslist[0],
+          curpos: LatLng(curlat, curlng),
+          bslist: bslist,
+          currentbusindex: currentbsindex,
+          ETA: cureta,
+          markerbitmap2: markerbitmap2,
+          markerbitmap: markerbitmap,
+        ),
+        FavoriteScreen(),
+        RouteScreen(),
+      ];
+    });
+  }
   API(){
     getCurrentBS();
     getCurrentETA();
@@ -419,8 +440,11 @@ class _NewMainState extends State<NewMain> {
 
   @override
   void initState() {
-    API();
     super.initState();
+    getCurrentBS();
+    getCurrentETA();
+    getHeadCount();
+    updatescreen();
     ReadBusStopData().then((value) {
       setState(() {
         bsstops.addAll(value);
@@ -451,30 +475,11 @@ class _NewMainState extends State<NewMain> {
       _darkStyle = string;
     });
   }
-  updatescreen()async{
-    await loadmapstyle();
-    setState(() {
-      _screens = [
-        BSScreen(
-          darkStyle: _darkStyle,
-          busstop: bslist[0],
-          curpos: LatLng(curlat, curlng),
-          bslist: bslist,
-          currentbusindex: currentbsindex,
-          ETA: cureta,
-          markerbitmap2: markerbitmap2,
-          markerbitmap: markerbitmap,
-        ),
-        FavoriteScreen(),
-        RouteScreen(),
-      ];
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        home: bslist.isEmpty
+        home: bslist.isEmpty && _screens.isEmpty
             ? Center(
                 child: SpinKitDualRing(
                   color: Colors.red,
