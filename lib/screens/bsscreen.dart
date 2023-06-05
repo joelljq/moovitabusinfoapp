@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -29,20 +31,18 @@ class BSScreen extends StatefulWidget {
 }
 
 class _BSScreenState extends State<BSScreen> {
-  late String darkStyle = widget.darkStyle;
+  late String darkStyle;
   late GoogleMapController mapController;
-  late BusStopClass busstop = widget.busstop;
-  late BitmapDescriptor markerbitmap = widget.markerbitmap;
-  late BitmapDescriptor markerbitmap2 = widget.markerbitmap2;
-  late LatLng curpos = widget.curpos;
-  late List<BusStopClass> bslist = widget.bslist;
-  late int currentbusindex = widget.currentbusindex;
-  late int etaa = widget.ETA;
+  late BusStopClass busstop;
+  late BitmapDescriptor markerbitmap;
+  late BitmapDescriptor markerbitmap2;
+  late LatLng curpos;
+  late List<BusStopClass> bslist;
+  late int currentbusindex;
+  late int etaa;
   Set<Marker> markers = new Set();
 
   String status(int currentcode) {
-    print(currentcode.toString());
-    print(currentbusindex.toString());
     int index = 0;
     int diff = 0;
     index = currentcode;
@@ -67,11 +67,26 @@ class _BSScreenState extends State<BSScreen> {
     }
     return Status;
   }
-
+  late Timer updatetimer;
   @override
   void initState() {
     super.initState();
+    updatetimer = new Timer.periodic(Duration(seconds: 1), (_) {
+      updatevalues();
+    });
+  }
 
+  updatevalues(){
+    setState(() {
+      darkStyle = widget.darkStyle;
+      busstop = widget.busstop;
+      markerbitmap = widget.markerbitmap;
+      markerbitmap2 = widget.markerbitmap2;
+      curpos = widget.curpos;
+      bslist = widget.bslist;
+      currentbusindex = widget.currentbusindex;
+      etaa = widget.ETA;
+    });
   }
 
   @override

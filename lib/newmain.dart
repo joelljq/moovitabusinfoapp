@@ -108,17 +108,19 @@ class _NewMainState extends State<NewMain> {
   }
 
   percentaged() {
-    int Heads = int.parse(HC);
-    if (Heads < 6) {
-      percentage = 0.2;
-      cap = Colors.green;
-    } else if (Heads < 10) {
-      percentage = 0.6;
-      cap = Colors.yellow;
-    } else if (Heads > 9) {
-      percentage = 0.9;
-      cap = Colors.red;
-    }
+    setState(() {
+      int Heads = int.parse(HC);
+      if (Heads < 6) {
+        percentage = 0.2;
+        cap = Colors.green;
+      } else if (Heads < 10) {
+        percentage = 0.6;
+        cap = Colors.yellow;
+      } else if (Heads > 9) {
+        percentage = 0.9;
+        cap = Colors.red;
+      }
+    });
   }
 
   int nearestMinute(String time) {
@@ -236,15 +238,16 @@ class _NewMainState extends State<NewMain> {
   }
 
   getdisplayindex(String CBS) {
-    CurrentBSS = CBS;
-    if (CBS == "0" || CBS.isEmpty) {
-      currentbsindex = int.parse(CBS);
-    } else if (CBS.contains('\"')) {
-      currentbsindex = int.parse(CBS.substring(0, 1));
-    } else {
-      currentbsindex = int.parse(CBS);
-    }
-    print("Current Bus Stop Is: ${currentbsindex.toString()}");
+    setState(() {
+      CurrentBSS = CBS;
+      if (CBS == "0" || CBS.isEmpty) {
+        currentbsindex = int.parse(CBS);
+      } else if (CBS.contains('\"')) {
+        currentbsindex = int.parse(CBS.substring(0, 1));
+      } else {
+        currentbsindex = int.parse(CBS);
+      }
+    });
   }
 
   Future<bool> timeCheck() async {
@@ -276,29 +279,32 @@ class _NewMainState extends State<NewMain> {
   }
 
   getcurrentbusindex(int ETA) {
-    if (ETA > 0) {
-      if (mybs != 1) {
-        mapbs = mybs - 1;
-        busstatus = 'Bus is coming from ${bstoplist[mapbs]} in ${ETA} mins';
+    setState(() {
+      if (ETA > 0) {
+        if (mybs != 1) {
+          mapbs = mybs - 1;
+          busstatus = 'Bus is coming from ${bstoplist[mapbs]} in ${ETA} mins';
+        } else {
+          mapbs = mybs;
+          busstatus = 'Bus is coming from ${bstoplist[mapbs]} in ${ETA} mins';
+        }
+        getbusposition();
       } else {
         mapbs = mybs;
-        busstatus = 'Bus is coming from ${bstoplist[mapbs]} in ${ETA} mins';
+        busstatus = 'Bus has arrived at ${bstoplist[mapbs - 1]}';
+        getbusposition();
       }
-      getbusposition();
-    } else {
-      mapbs = mybs;
-      busstatus = 'Bus has arrived at ${bstoplist[mapbs - 1]}';
-      getbusposition();
-    }
+    });
   }
 
   getbusposition() async {
     await ReadCurrentLocation();
-    int index = buspos.indexWhere((buspos) =>
-        buspos.Route == "${currentbsindex.toString()}.${cureta.toString()}");
-    curlat = buspos[index].lat;
-    curlng = buspos[index].lng;
-    print(curlat.toString());
+    setState(() {
+      int index = buspos.indexWhere((buspos) =>
+      buspos.Route == "${currentbsindex.toString()}.${cureta.toString()}");
+      curlat = buspos[index].lat;
+      curlng = buspos[index].lng;
+    });
   }
 
   Future<bool> _handleLocationPermission() async {
@@ -335,7 +341,6 @@ class _NewMainState extends State<NewMain> {
         await rootBundle.rootBundle.loadString('jsonfile/NPStops.json');
     //decode json data as list
     var busstops = <BusStopClass>[];
-    print("Success");
 
     Map<String, dynamic> productsJson = json.decode(jsondata);
     for (var productJson in productsJson['value']) {
@@ -360,8 +365,8 @@ class _NewMainState extends State<NewMain> {
       debugPrint(e);
     });
     if (_currentPosition != null) {
-      print(_currentPosition);
-      print('Success');
+      // print(_currentPosition);
+      // print('Success');
     } else if (_currentPosition == null) {
       geotimer = Timer(Duration(seconds: 1), _getCurrentLocation);
     }
@@ -401,17 +406,21 @@ class _NewMainState extends State<NewMain> {
   late Timer etatimer;
   late Timer hctimer;
   late Timer rtctimer;
+  late Timer screentimer;
 
-  void API() {
+  List<Widget> _screens = [];
 
-
+  API(){
+    getCurrentBS();
+    getCurrentETA();
+    getHeadCount();
+    updatescreen();
   }
 
   @override
   void initState() {
-    getCurrentBS();
-    getCurrentETA();
-    getHeadCount();
+    API();
+    super.initState();
     ReadBusStopData().then((value) {
       setState(() {
         bsstops.addAll(value);
@@ -426,20 +435,9 @@ class _NewMainState extends State<NewMain> {
       });
     });
     timeCheck();
-    API();
     timer = new Timer.periodic(Duration(seconds: 60), (_) => timeCheck());
     bstimer = new Timer.periodic(Duration(seconds: 1), (_) {
-      getCurrentBS();
-    });
-    etatimer = new Timer.periodic(Duration(seconds: 1), (_) {
-      getCurrentETA();
-    });
-    hctimer = new Timer.periodic(Duration(seconds: 1), (_) {
-      getHeadCount();
-    });
-    super.initState();
-    rootBundle.rootBundle.loadString('jsonfile/darkgoogle.json').then((string) {
-      _darkStyle = string;
+      API();
     });
     getmarkericon();
     SystemChrome.setPreferredOrientations([
@@ -448,20 +446,30 @@ class _NewMainState extends State<NewMain> {
     ]);
   }
 
-  late List<Widget> _screens = [
-    BSScreen(
-      darkStyle: _darkStyle,
-      busstop: bslist[0],
-      curpos: LatLng(curlat, curlng),
-      bslist: bslist,
-      currentbusindex: currentbsindex,
-      ETA: cureta,
-      markerbitmap2: markerbitmap2,
-      markerbitmap: markerbitmap,
-    ),
-    FavoriteScreen(),
-    RouteScreen(),
-  ];
+  loadmapstyle(){
+    rootBundle.rootBundle.loadString('jsonfile/darkgoogle.json').then((string) {
+      _darkStyle = string;
+    });
+  }
+  updatescreen()async{
+    await loadmapstyle();
+    setState(() {
+      _screens = [
+        BSScreen(
+          darkStyle: _darkStyle,
+          busstop: bslist[0],
+          curpos: LatLng(curlat, curlng),
+          bslist: bslist,
+          currentbusindex: currentbsindex,
+          ETA: cureta,
+          markerbitmap2: markerbitmap2,
+          markerbitmap: markerbitmap,
+        ),
+        FavoriteScreen(),
+        RouteScreen(),
+      ];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
