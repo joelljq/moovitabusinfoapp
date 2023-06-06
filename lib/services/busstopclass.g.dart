@@ -20,11 +20,11 @@ class BusStopClassAdapter extends TypeAdapter<BusStopClass> {
       code: fields[0] as String,
       name: fields[1] as String,
       road: fields[2] as String,
+      lat: fields[3] as double,
+      lng: fields[4] as double,
       isFavorite: fields[6] as bool,
       isAlert: fields[7] as bool,
     )
-      ..lat = fields[3] as double
-      ..lng = fields[4] as double
       ..distance = fields[5] as double;
   }
 

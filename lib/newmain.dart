@@ -5,17 +5,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
+import 'package:moovitainfo/screens/favscreen.dart';
 import 'package:moovitainfo/services/busstopclass.dart';
 import 'package:moovitainfo/services/currentlocationclass.dart';
 import 'package:moovitainfo/screens/bsscreen.dart';
 import 'package:moovitainfo/services/notif.dart';
+import 'package:hive/hive.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   NotificationService().initNotification();
+  await Hive.initFlutter();
+  Hive.registerAdapter(BusStopClassAdapter());
+  await Hive.openBox<BusStopClass>('favorites');
   runApp(NewMain());
 }
 
@@ -27,6 +33,7 @@ class NewMain extends StatefulWidget {
 }
 
 class _NewMainState extends State<NewMain> {
+  Box<BusStopClass> favoritesBox = Hive.box<BusStopClass>('favorites');
   late Position _currentPosition;
   List<BusStopClass> bsstops = [];
   List<BusStopClass> bslist = [];
@@ -96,6 +103,36 @@ class _NewMainState extends State<NewMain> {
   double percentage = 0.0;
   Color cap = Colors.green;
   List<CurrentLocationClass> buspos = [];
+  List<BusStopClass> favoritesList = [];
+
+  void loadFavorites() {
+    setState(() {
+      favoritesList = favoritesBox.values.toList(); // Retrieve favorites from Hive box
+      updateFavoriteStatus();
+    });
+  }
+
+  void addToFavorites(BusStopClass busStop) {
+    favoritesBox.add(busStop); // Add a bus stop to favorites
+    loadFavorites(); // Reload the favorites list
+  }
+
+  void removeFromFavorites(BusStopClass busStop) {
+    favoritesBox.delete(busStop.key); // Remove a bus stop from favorites
+    loadFavorites(); // Reload the favorites list
+  }
+
+  void updateFavoriteStatus() {
+    for (BusStopClass favoriteBusStop in favoritesList) {
+      for (BusStopClass busStop in bslist) {
+        if (favoriteBusStop.code == busStop.code) {
+          busStop.isFavorite = true;
+          break;
+        }
+      }
+    }
+  }
+
 
   Future<List<CurrentLocationClass>> ReadCurrentLocation() async {
     //read json file
@@ -304,7 +341,7 @@ class _NewMainState extends State<NewMain> {
     await ReadCurrentLocation();
     setState(() {
       int index = buspos.indexWhere((buspos) =>
-      buspos.Route == "${currentbsindex.toString()}.${cureta.toString()}");
+          buspos.Route == "${currentbsindex.toString()}.${cureta.toString()}");
       curlat = buspos[index].lat;
       curlng = buspos[index].lng;
     });
@@ -389,6 +426,7 @@ class _NewMainState extends State<NewMain> {
       bslist.sort((a, b) {
         return a.distance.compareTo(b.distance);
       });
+      loadFavorites();
     });
   }
 
@@ -412,7 +450,8 @@ class _NewMainState extends State<NewMain> {
   late Timer screentimer;
 
   List<Widget> _screens = [];
-  updatescreen()async{
+
+  updatescreen() async {
     await loadmapstyle();
     setState(() {
       _screens = [
@@ -425,13 +464,25 @@ class _NewMainState extends State<NewMain> {
           ETA: cureta,
           markerbitmap2: markerbitmap2,
           markerbitmap: markerbitmap,
+          addtoFavorites: addToFavorites,
+          removeFromFavorites: removeFromFavorites,
         ),
-        FavoriteScreen(),
+        FavScreen(
+          darkStyle: _darkStyle,
+          curpos: LatLng(curlat, curlng),
+          bslist: favoritesList,
+          currentbusindex: currentbsindex,
+          ETA: cureta,
+          markerbitmap2: markerbitmap2,
+          markerbitmap: markerbitmap,
+          removeFromFavorites: removeFromFavorites,
+        ),
         RouteScreen(),
       ];
     });
   }
-  API(){
+
+  API() {
     getCurrentBS();
     getCurrentETA();
     getHeadCount();
@@ -452,7 +503,7 @@ class _NewMainState extends State<NewMain> {
     });
     _getCurrentLocation();
     timer =
-    new Timer.periodic(Duration(seconds: 60), (_) => _getCurrentLocation());
+        new Timer.periodic(Duration(seconds: 60), (_) => _getCurrentLocation());
     ReadCurrentLocation().then((value) {
       setState(() {
         buspos.addAll(value);
@@ -470,7 +521,7 @@ class _NewMainState extends State<NewMain> {
     ]);
   }
 
-  loadmapstyle(){
+  loadmapstyle() {
     rootBundle.rootBundle.loadString('jsonfile/darkgoogle.json').then((string) {
       _darkStyle = string;
     });

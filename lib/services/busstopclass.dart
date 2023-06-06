@@ -29,13 +29,14 @@ class BusStopClass extends HiveObject {
   @HiveField(7)
   late bool isAlert;
 
-  BusStopClass({
-    required this.code,
-    required this.name,
-    required this.road,
-    this.isFavorite = false,
-    this.isAlert = false,
-  });
+  BusStopClass(
+      {required this.code,
+      required this.name,
+      required this.road,
+      this.isFavorite = false,
+      this.isAlert = false,
+      required this.lat,
+      required this.lng});
 
   BusStopClass.fromJson(Map<String, dynamic> json) {
     code = json['BusStopCode'];
@@ -47,4 +48,3 @@ class BusStopClass extends HiveObject {
     isAlert = false;
   }
 }
-

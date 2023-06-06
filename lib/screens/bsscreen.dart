@@ -15,6 +15,8 @@ class BSScreen extends StatefulWidget {
   int ETA;
   BitmapDescriptor markerbitmap;
   BitmapDescriptor markerbitmap2;
+  Function(BusStopClass) addtoFavorites;
+  Function(BusStopClass) removeFromFavorites;
 
   BSScreen(
       {Key? key,
@@ -25,7 +27,9 @@ class BSScreen extends StatefulWidget {
       required this.currentbusindex,
       required this.ETA,
       required this.markerbitmap,
-      required this.markerbitmap2})
+      required this.markerbitmap2,
+      required this.addtoFavorites,
+      required this.removeFromFavorites})
       : super(key: key);
 
   @override
@@ -256,6 +260,12 @@ class _BSScreenState extends State<BSScreen> {
             onPressed: () {
               setState(() {
                 bslist[index].isFavorite = !bslist[index].isFavorite;
+                if(bslist[index].isFavorite == true){
+                  widget.addtoFavorites(bslist[index]);
+                }
+                else{
+                  widget.removeFromFavorites(bslist[index]);
+                }
               });
             },
           ),

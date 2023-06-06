@@ -8,23 +8,23 @@ import 'package:moovitainfo/services/notif.dart';
 
 class FavScreen extends StatefulWidget {
   String darkStyle;
-  BusStopClass busstop;
   LatLng curpos;
   List<BusStopClass> bslist;
   int currentbusindex;
   int ETA;
   BitmapDescriptor markerbitmap;
   BitmapDescriptor markerbitmap2;
+  Function(BusStopClass) removeFromFavorites;
 
   FavScreen({Key? key,
     required this.darkStyle,
-    required this.busstop,
     required this.curpos,
     required this.bslist,
     required this.currentbusindex,
     required this.ETA,
     required this.markerbitmap,
-    required this.markerbitmap2})
+    required this.markerbitmap2,
+    required this.removeFromFavorites})
       : super(key: key);
 
   @override
@@ -34,13 +34,13 @@ class FavScreen extends StatefulWidget {
 class _FavScreenState extends State<FavScreen> {
   late String darkStyle;
   late GoogleMapController mapController;
-  late BusStopClass busstop;
   late BitmapDescriptor markerbitmap;
   late BitmapDescriptor markerbitmap2;
   late LatLng curpos;
   late List<BusStopClass> bslist;
   late int currentbusindex;
   late int etaa;
+  late BusStopClass busstop;
   int currentETA = 0;
   Set<Marker> markers = new Set();
 
@@ -123,44 +123,102 @@ class _FavScreenState extends State<FavScreen> {
   updatevalues(){
     setState(() {
       darkStyle = widget.darkStyle;
-      busstop = widget.busstop;
       markerbitmap = widget.markerbitmap;
       markerbitmap2 = widget.markerbitmap2;
       curpos = widget.curpos;
       bslist = widget.bslist;
       currentbusindex = widget.currentbusindex;
       etaa = widget.ETA;
+
+      if(bslist.isEmpty){
+        busstop = BusStopClass(
+          code: '1',
+          name: 'King Albert Park',
+          road: 'S10202778B',
+          lat: 1.3365156413692878,
+          lng: 103.78278794804254,
+          isFavorite: false,
+          isAlert: false,
+        );
+      }
+      else{
+        busstop = bslist[0];
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return markerbitmap == null ? Center(
-      child: SpinKitDualRing(
-        color: Colors.red,
-        size: 20.0,
-      ),
+    return bslist.isEmpty?  Center(
+      child: Text("You have yet to favourite any bus stops", style: TextStyle(fontSize: 30),)
     ): Column(
       children: [
-        SizedBox(
-          width: 500, // or use fixed size like 200
-          height: 350,
-          child: GoogleMap(
-            onMapCreated: (controller) {
-              //method called when map is created
-              setState(() {
-                mapController = controller;
-                mapController.setMapStyle(darkStyle);
-              });
-            },
-            initialCameraPosition: CameraPosition(
-              target: LatLng(busstop.lat, busstop.lng),
-              zoom: 16,
+        Stack(
+          children: [
+            SizedBox(
+              width: 500, // or use fixed size like 200
+              height: 350,
+              child: GoogleMap(
+                onMapCreated: (controller) {
+                  //method called when map is created
+                  setState(() {
+                    mapController = controller;
+                    mapController.setMapStyle(darkStyle);
+                  });
+                },
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(busstop.lat, busstop.lng),
+                  zoom: 16,
+                ),
+                markers: getmarkers(),
+                myLocationButtonEnabled: true,
+                myLocationEnabled: true,
+              ),
             ),
-            markers: getmarkers(),
-            myLocationButtonEnabled: true,
-            myLocationEnabled: true,
-          ),
+            Positioned(
+              top: 30,
+              left: 100,
+              right: 100,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    "${busstop.name}",
+                    style: TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top:30,
+              left:10,
+              child: InkWell(
+                onTap: () {
+                  // Handle the onTap event
+                  // Add your desired functionality here
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Image.asset(
+                    'jsonfile/Moovita1.png', // Replace with your image path
+                    width: 40,
+                    height: 40,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         Expanded(
           child: Container(
@@ -203,6 +261,7 @@ class _FavScreenState extends State<FavScreen> {
                 onPressed: () {
                   setState(() {
                     bslist[index].isFavorite = !bslist[index].isFavorite;
+                    widget.removeFromFavorites(bslist[index]);
                   });
                 },
               ),
@@ -257,6 +316,14 @@ class _FavScreenState extends State<FavScreen> {
               ),
             )
           ],
+          onExpansionChanged: (isExpanded) {
+            // Handle the onExpansionChanged event here
+            if (isExpanded) {
+              busstop = bslist[index];
+              mapController.animateCamera(
+                  CameraUpdate.newLatLngZoom(LatLng(busstop.lat, busstop.lng), 16));
+            }
+          },
         ));
   }
 
