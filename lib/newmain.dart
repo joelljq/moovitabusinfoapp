@@ -126,7 +126,7 @@ class _NewMainState extends State<NewMain> {
     for (BusStopClass busStop in bslist) {
       bool isFavorite = false;
 
-      for (BusStopClass favoriteBusStop in favorite) {
+      for (BusStopClass favoriteBusStop in favoritesList) {
         if (favoriteBusStop.code == busStop.code) {
           isFavorite = true;
           break;
