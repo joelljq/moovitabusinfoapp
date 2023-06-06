@@ -123,15 +123,20 @@ class _NewMainState extends State<NewMain> {
   }
 
   void updateFavoriteStatus() {
-    for (BusStopClass favoriteBusStop in favoritesList) {
-      for (BusStopClass busStop in bslist) {
+    for (BusStopClass busStop in bslist) {
+      bool isFavorite = false;
+
+      for (BusStopClass favoriteBusStop in favorite) {
         if (favoriteBusStop.code == busStop.code) {
-          busStop.isFavorite = true;
+          isFavorite = true;
           break;
         }
       }
+
+      busStop.isFavorite = isFavorite;
     }
   }
+
 
 
   Future<List<CurrentLocationClass>> ReadCurrentLocation() async {
