@@ -71,7 +71,7 @@ class _NewMainState extends State<NewMain> {
   String CurrentBusStop = "";
   int mybs = 0;
   int mapbs = 0;
-  String IP = '172.17.26.222:5332';
+  String IP = '192.168.1.103:5332';
   String json1 = '';
   String json2 = '';
   String json3 = '';
@@ -109,6 +109,7 @@ class _NewMainState extends State<NewMain> {
     setState(() {
       favoritesList = favoritesBox.values.toList(); // Retrieve favorites from Hive box
       updateFavoriteStatus();
+      updatescreen();
     });
   }
 
@@ -118,7 +119,11 @@ class _NewMainState extends State<NewMain> {
   }
 
   void removeFromFavorites(BusStopClass busStop) {
-    favoritesBox.delete(busStop.key); // Remove a bus stop from favorites
+    for (BusStopClass favbs in favoritesList){
+      if(busStop.code == favbs.code){
+        favoritesBox.delete(favbs.key);// Remove a bus stop from favorites
+      }
+    }
     loadFavorites(); // Reload the favorites list
   }
 
@@ -516,7 +521,7 @@ class _NewMainState extends State<NewMain> {
     });
     timeCheck();
     timer = new Timer.periodic(Duration(seconds: 60), (_) => timeCheck());
-    bstimer = new Timer.periodic(Duration(seconds: 1), (_) {
+    bstimer = new Timer.periodic(Duration(seconds: 10), (_) {
       API();
     });
     getmarkericon();

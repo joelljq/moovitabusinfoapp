@@ -53,6 +53,7 @@ dependencies:
   hive_flutter: ^1.1.0
   build_runner: ^2.3.3
   hive_generator: ^2.0.0
+  flutter_google_places_web: ^1.0.2
 
 dev_dependencies:
   flutter_test:
