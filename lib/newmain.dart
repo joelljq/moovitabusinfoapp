@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:moovitainfo/screens/favscreen.dart';
+import 'package:moovitainfo/screens/routescreen.dart';
 import 'package:moovitainfo/services/busstopclass.dart';
 import 'package:moovitainfo/services/currentlocationclass.dart';
 import 'package:moovitainfo/screens/bsscreen.dart';
@@ -71,7 +72,7 @@ class _NewMainState extends State<NewMain> {
   String CurrentBusStop = "";
   int mybs = 0;
   int mapbs = 0;
-  String IP = '192.168.1.103:5332';
+  String IP = '172.17.26.222:5332';
   String json1 = '';
   String json2 = '';
   String json3 = '';
@@ -487,7 +488,18 @@ class _NewMainState extends State<NewMain> {
           markerbitmap: markerbitmap,
           removeFromFavorites: removeFromFavorites,
         ),
-        RouteScreen(),
+        RouteScreen(
+          darkStyle: _darkStyle,
+          busstop: bslist[0],
+          curpos: LatLng(curlat, curlng),
+          bslist: bslist,
+          currentbusindex: currentbsindex,
+          ETA: cureta,
+          markerbitmap2: markerbitmap2,
+          markerbitmap: markerbitmap,
+          addtoFavorites: addToFavorites,
+          removeFromFavorites: removeFromFavorites,
+        ),
       ];
     });
   }
@@ -531,6 +543,13 @@ class _NewMainState extends State<NewMain> {
     ]);
   }
 
+  // @override
+  // void dispose(){
+  //   super.dispose();
+  //   timer.cancel();
+  //   bstimer.cancel();
+  // }
+
   loadmapstyle() {
     rootBundle.rootBundle.loadString('jsonfile/darkgoogle.json').then((string) {
       _darkStyle = string;
@@ -542,11 +561,22 @@ class _NewMainState extends State<NewMain> {
     return MaterialApp(
         home: bslist.isEmpty && _screens.isEmpty
             ? Center(
-                child: SpinKitDualRing(
-                  color: Colors.red,
-                  size: 20.0,
-                ),
-              )
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              SpinKitDualRing(
+                color: Colors.blue,
+                size: 80,
+                lineWidth: 4,
+              ),
+              Image.asset(
+                'jsonfile/Moovita1.png', // Replace with your logo asset path
+                width: 60,
+                height: 60,
+              ),
+            ],
+          ),
+        )
             : Scaffold(
                 body: _screens[_currentIndex],
                 bottomNavigationBar: BottomNavigationBar(
@@ -578,29 +608,3 @@ class _NewMainState extends State<NewMain> {
   }
 }
 
-class BusScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('Bus Screen'),
-    );
-  }
-}
-
-class FavoriteScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('Favorite Screen'),
-    );
-  }
-}
-
-class RouteScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('Route Screen'),
-    );
-  }
-}

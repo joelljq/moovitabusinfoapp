@@ -24,8 +24,22 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
   int toindex = 0;
   int mybs = 0;
   int etaa = 0;
+  int duration = 0;
   String departure = '';
   String arrival = '';
+  List<String> bstoplist = [
+    'King Albert Park',
+    'Main Entrance',
+    'Blk 23',
+    'Sports Hall',
+    'SIT',
+    'Blk 44',
+    'Blk 37',
+    'Makan Place',
+    'Health Science',
+    'LSCT',
+    'Blk 72'
+  ];
 
   getBusStatus() {
     fromindex = int.parse(widget.string1);
@@ -44,7 +58,6 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
 
     int diff = 0;
     int diff2 = 0;
-    int duration = 0;
     diff = fromindex - mybs;
     diff2 = toindex - fromindex;
     if (diff > 1) {
@@ -75,58 +88,139 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // return Container(
+    //   decoration: BoxDecoration(
+    //     color: Colors.red[400],
+    //     border: Border.all(color: Colors.red, width: 2),
+    //     borderRadius: BorderRadius.only(
+    //       topLeft: Radius.circular(30),
+    //       topRight: Radius.circular(30),
+    //     ),
+    //   ),
+    //   child: Column(
+    //     children: <Widget>[
+    //       Container(
+    //         margin: EdgeInsets.all(20),
+    //         child: Text(
+    //           "Estimated Departure",
+    //           style: TextStyle(
+    //               fontSize: 25,
+    //               color: Colors.white,
+    //               fontWeight: FontWeight.bold),
+    //         ),
+    //       ),
+    //       Container(
+    //         margin: EdgeInsets.all(20),
+    //         child: Text(
+    //           departure,
+    //           style: TextStyle(
+    //               fontSize: 25,
+    //               color: Colors.white,
+    //               fontWeight: FontWeight.bold),
+    //         ),
+    //       ),
+    //       Container(
+    //         margin: EdgeInsets.all(20),
+    //         child: Text(
+    //           "Estimated Arrival",
+    //           style: TextStyle(
+    //               fontSize: 25,
+    //               color: Colors.white,
+    //               fontWeight: FontWeight.bold),
+    //         ),
+    //       ),
+    //       Container(
+    //         margin: EdgeInsets.all(20),
+    //         child: Text(
+    //           arrival,
+    //           style: TextStyle(
+    //               fontSize: 25,
+    //               color: Colors.white,
+    //               fontWeight: FontWeight.bold),
+    //         ),
+    //       ),
+    //     ],
+    //   ),
+    // );
     return Container(
+      height: MediaQuery.of(context).size.height * 0.6,
       decoration: BoxDecoration(
-        color: Colors.red[400],
-        border: Border.all(color: Colors.red, width: 2),
+        color: Color(0xFF671919),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
         ),
       ),
-      child: Column(
-        children: <Widget>[
-          Container(
-            margin: EdgeInsets.all(20),
-            child: Text(
-              "Estimated Departure",
-              style: TextStyle(
-                  fontSize: 25,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold),
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("From",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[600])),
+                              SizedBox.fromSize(
+                                  size: Size.fromHeight(40.0),
+                                  child: Text(bstoplist[fromindex - 1], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20))),
+                              // add other widget as child of column
+                            ],
+                          ),
+                          SizedBox(height: 10),
+                          Align(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("To",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[600])),
+                                SizedBox.fromSize(
+                                    size: Size.fromHeight(40.0),
+                                    child: Text(bstoplist[toindex - 1], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),),
+                                // add other widget as child of column
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          Container(
-            margin: EdgeInsets.all(20),
-            child: Text(
-              departure,
-              style: TextStyle(
-                  fontSize: 25,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.all(20),
-            child: Text(
-              "Estimated Arrival",
-              style: TextStyle(
-                  fontSize: 25,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.all(20),
-            child: Text(
-              arrival,
-              style: TextStyle(
-                  fontSize: 25,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
+            SizedBox(height: 10,),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.white
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Text("${departure} - ${arrival}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),),
+                    Text("${duration.toString()} Mins Duration", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),)
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
