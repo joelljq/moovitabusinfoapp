@@ -1,51 +1,46 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:moovitainfo/services/currentlocationclass.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as rootBundle;
 import 'package:flutter/services.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:moovitainfo/busstoplist.dart';
-import 'package:moovitainfo/settings.dart';
-import 'package:moovitainfo/survey.dart';
-import 'package:mqtt_client/mqtt_client.dart';
-import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:percent_indicator/percent_indicator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:moovitainfo/screens/bsscreen.dart';
+import 'package:moovitainfo/screens/favscreen.dart';
+import 'package:moovitainfo/screens/routescreen.dart';
+import 'package:moovitainfo/services/busstopclass.dart';
+import 'package:moovitainfo/services/currentlocationclass.dart';
+import 'package:moovitainfo/services/notif.dart';
 
-void main() {
-  runApp(MyMain());
-}
-
-class MyMain extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'My App',
-      routes: {
-        '/': (context) => MyApp(),
-        '/second': (context) => MyBS(),
-        '/settings': (context) => MyIP(),
-        '/survey': (context) => SurveyPage()
-      },
-    );
-  }
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  NotificationService().initNotification();
+  await Hive.initFlutter();
+  Hive.registerAdapter(BusStopClassAdapter());
+  await Hive.openBox<BusStopClass>('favorites');
+  runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
-  List<String> bslist = [
+  Box<BusStopClass> favoritesBox = Hive.box<BusStopClass>('favorites');
+  late Position _currentPosition;
+  List<BusStopClass> bsstops = [];
+  List<BusStopClass> bslist = [];
+  late Timer geotimer;
+  List<String> bstoplist = [
     'KAP',
     'Main Entrance',
     'Blk 23',
@@ -71,15 +66,6 @@ class _MyAppState extends State<MyApp> {
     LatLng(1.3311533369747423, 103.77490110804173),
     LatLng(1.3312394356934057, 103.77644173403719)
   ];
-  final MqttServerClient client =
-      MqttServerClient('test.mosquitto.org', '1883');
-  Map BusStop = {
-    'BusStopCode': '1',
-    'name': 'King Albert Park',
-    'road': 'S10202778B',
-    'lat': 1.3365156413692878,
-    'lng': 103.78278794804254
-  };
   late String _darkStyle;
   late String _lightStyle;
   String officialstyle = '';
@@ -87,7 +73,7 @@ class _MyAppState extends State<MyApp> {
   String CurrentBusStop = "";
   int mybs = 0;
   int mapbs = 0;
-  String IP = '192.168.2.105:5332';
+  String IP = '172.17.26.222:5332';
   String json1 = '';
   String json2 = '';
   String json3 = '';
@@ -99,30 +85,65 @@ class _MyAppState extends State<MyApp> {
   String busstatus = '';
   String CurrentBS = '';
   String CurrentBSS = '';
+  late BitmapDescriptor markerbitmap;
+  late BitmapDescriptor markerbitmap2;
   String _HC = '';
   String HC = '0';
   late String ETA;
-  int etaa = 0;
+  int etaa = -1;
   int etaaa = 0;
-  int cureta = 0;
+  int cureta = -1;
   int currentbsindex = 0;
   int secbsindex = 0;
   int thirdbsindex = 0;
   String RTC = '';
-  PolylinePoints polylinePoints = PolylinePoints();
-  Map<PolylineId, Polyline> polylines = {};
   bool second = false;
-  late BitmapDescriptor markerbitmap;
-  late BitmapDescriptor markerbitmap2;
-  late GoogleMapController mapController; //contrller for Google map
-  Set<Marker> markers = new Set();
   bool timechecked = false;
   bool _isDark = false;
-  List<CurrentLocationClass> buspos = [];
   double curlat = 0.0;
   double curlng = 0.0;
   double percentage = 0.0;
   Color cap = Colors.green;
+  List<CurrentLocationClass> buspos = [];
+  List<BusStopClass> favoritesList = [];
+
+  void loadFavorites() {
+    setState(() {
+      favoritesList =
+          favoritesBox.values.toList(); // Retrieve favorites from Hive box
+      updateFavoriteStatus();
+      updatescreen();
+    });
+  }
+
+  void addToFavorites(BusStopClass busStop) {
+    favoritesBox.add(busStop); // Add a bus stop to favorites
+    loadFavorites(); // Reload the favorites list
+  }
+
+  void removeFromFavorites(BusStopClass busStop) {
+    for (BusStopClass favbs in favoritesList) {
+      if (busStop.code == favbs.code) {
+        favoritesBox.delete(favbs.key); // Remove a bus stop from favorites
+      }
+    }
+    loadFavorites(); // Reload the favorites list
+  }
+
+  void updateFavoriteStatus() {
+    for (BusStopClass busStop in bslist) {
+      bool isFavorite = false;
+
+      for (BusStopClass favoriteBusStop in favoritesList) {
+        if (favoriteBusStop.code == busStop.code) {
+          isFavorite = true;
+          break;
+        }
+      }
+
+      busStop.isFavorite = isFavorite;
+    }
+  }
 
   Future<List<CurrentLocationClass>> ReadCurrentLocation() async {
     //read json file
@@ -138,17 +159,19 @@ class _MyAppState extends State<MyApp> {
   }
 
   percentaged() {
-    int Heads = int.parse(HC);
-    if (Heads < 6) {
-      percentage = 0.2;
-      cap = Colors.green;
-    } else if (Heads < 10) {
-      percentage = 0.6;
-      cap = Colors.yellow;
-    } else if (Heads > 9) {
-      percentage = 0.9;
-      cap = Colors.red;
-    }
+    setState(() {
+      int Heads = int.parse(HC);
+      if (Heads < 6) {
+        percentage = 0.2;
+        cap = Colors.green;
+      } else if (Heads < 10) {
+        percentage = 0.6;
+        cap = Colors.yellow;
+      } else if (Heads > 9) {
+        percentage = 0.9;
+        cap = Colors.red;
+      }
+    });
   }
 
   int nearestMinute(String time) {
@@ -156,36 +179,6 @@ class _MyAppState extends State<MyApp> {
         minutes: int.parse(time.split(':')[0]),
         seconds: int.parse(time.split(':')[1]));
     return (duration.inSeconds / 60).round();
-  }
-
-  _addPolyLine(List<LatLng> polylineCoordinates) {
-    PolylineId id = PolylineId("poly");
-    Polyline polyline = Polyline(
-      polylineId: id,
-      points: polylineCoordinates,
-      width: 6,
-      color: Colors.red,
-    );
-    polylines[id] = polyline;
-    setState(() {});
-  }
-
-  void getPolyPoints() async {
-    List<LatLng> polylineCoordinates = [];
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      'AIzaSyAjpdWMmL1o09QOW48v-ZkMwNzr8LWLrYM',
-      PointLatLng(BusStop['lat'], BusStop['lng']),
-      PointLatLng(curlat, curlng),
-      travelMode: TravelMode.driving,
-    );
-    if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
-    } else {
-      print(result.errorMessage);
-    }
-    _addPolyLine(polylineCoordinates);
   }
 
   Future<String> getCurrentBS() async {
@@ -247,41 +240,6 @@ class _MyAppState extends State<MyApp> {
     percentaged();
   }
 
-  void connect() async {
-    try {
-      await client.connect();
-      print('MQTT client connected');
-      client.subscribe('/CurrentBusStop', MqttQos.exactlyOnce);
-      client.subscribe('/ETA', MqttQos.exactlyOnce);
-      client.subscribe('/RTC', MqttQos.exactlyOnce);
-      client.subscribe('/HC', MqttQos.exactlyOnce);
-      client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-        final MqttMessage recMess = c[0].payload;
-        final String topic = c[0].topic;
-        final MqttPublishMessage publishMessage = recMess as MqttPublishMessage;
-        final String message = utf8.decode(publishMessage.payload.message);
-        if (topic == '/CurrentBusStop') {
-          setState(() {
-            json1 = message;
-            Map<String, dynamic> jsonBS = jsonDecode(message);
-            message1 = jsonBS["Name"];
-            getdisplayindex(jsonBS["Name"]);
-          });
-        } else if (topic == '/ETA') {
-          setState(() {
-            json2 = message;
-            Map<String, dynamic> jsoneta = jsonDecode(message);
-            message2 = jsoneta["ETA"];
-            getBusStatus(jsoneta["ETA"]);
-            ETA = message2;
-          });
-        }
-      });
-    } catch (e) {
-      print('MQTT client connection failed: $e');
-    }
-  }
-
   getBusStatus(String ETAA) async {
     int index = 0;
     etaa = nearestMinute(ETAA);
@@ -305,7 +263,7 @@ class _MyAppState extends State<MyApp> {
     }
 
     int diff = 0;
-    index = int.parse(BusStop['BusStopCode']);
+    index = int.parse(bslist[0].code);
     diff = index - currentbsindex;
     if (diff > 1) {
       etaa = etaa + (3 * diff);
@@ -331,14 +289,16 @@ class _MyAppState extends State<MyApp> {
   }
 
   getdisplayindex(String CBS) {
-    CurrentBSS = CBS;
-    if (CBS == "0" || CBS.isEmpty) {
-      currentbsindex = int.parse(CBS);
-    } else if (CBS.contains('\"')) {
-      currentbsindex = int.parse(CBS.substring(0, 1));
-    } else {
-      currentbsindex = int.parse(CBS);
-    }
+    setState(() {
+      CurrentBSS = CBS;
+      if (CBS == "0" || CBS.isEmpty) {
+        currentbsindex = int.parse(CBS);
+      } else if (CBS.contains('\"')) {
+        currentbsindex = int.parse(CBS.substring(0, 1));
+      } else {
+        currentbsindex = int.parse(CBS);
+      }
+    });
   }
 
   Future<bool> timeCheck() async {
@@ -370,382 +330,115 @@ class _MyAppState extends State<MyApp> {
   }
 
   getcurrentbusindex(int ETA) {
-    if (ETA > 0) {
-      if (mybs != 1) {
-        mapbs = mybs - 1;
-        busstatus = 'Bus is coming from ${bslist[mapbs]} in ${ETA} mins';
+    setState(() {
+      if (ETA > 0) {
+        if (mybs != 1) {
+          mapbs = mybs - 1;
+          busstatus = 'Bus is coming from ${bstoplist[mapbs]} in ${ETA} mins';
+        } else {
+          mapbs = mybs;
+          busstatus = 'Bus is coming from ${bstoplist[mapbs]} in ${ETA} mins';
+        }
+        getbusposition();
       } else {
         mapbs = mybs;
-        busstatus = 'Bus is coming from ${bslist[mapbs]} in ${ETA} mins';
+        busstatus = 'Bus has arrived at ${bstoplist[mapbs - 1]}';
+        getbusposition();
       }
-      getbusposition();
-    } else {
-      mapbs = mybs;
-      busstatus = 'Bus has arrived at ${bslist[mapbs - 1]}';
-      getbusposition();
-    }
+    });
   }
 
-  getbusposition() async{
+  getbusposition() async {
     await ReadCurrentLocation();
-    int index = buspos.indexWhere((buspos) =>
-        buspos.Route == "${currentbsindex.toString()}.${cureta.toString()}");
-    curlat = buspos[index].lat;
-    curlng = buspos[index].lng;
-    getPolyPoints();
-  }
-
-  void API() {
-    getCurrentBS();
-    getCurrentETA();
-    getHeadCount();
-    bstimer = new Timer.periodic(Duration(seconds: 1), (_) {
-      getCurrentBS();
-    });
-    etatimer = new Timer.periodic(Duration(seconds: 1), (_) {
-      getCurrentETA();
-    });
-    hctimer = new Timer.periodic(Duration(seconds: 1), (_) {
-      getHeadCount();
-    });
-  }
-
-  void _showPopupMenu() {
-    showMenu(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-      context: context,
-      position: RelativeRect.fromLTRB(0, 80, 0, 0),
-      items: [
-        PopupMenuItem(
-          child: Text('Settings'),
-          value: 1,
-        ),
-        PopupMenuItem(
-          child: Text('Survey'),
-          value: 2,
-        ),
-      ],
-      elevation: 8.0,
-    ).then((value) async {
-      if (value == 1) {
-        dynamic settings = await Navigator.pushNamed(context, "/settings");
-        setState(() {
-          if (settings[0] != '') {
-            IP = settings[0];
-            choice = settings[1];
-            _saveIPAddress(IP);
-          } else {
-            choice = settings[1];
-          }
-          if (choice == "API") {
-            API();
-          } else if (choice == "MQTT") {
-            connect();
-          }
-        });
-      } else if (value == 2) {
-        Navigator.pushNamed(context, '/survey');
-      }
-    });
-  }
-
-  _loadIPAddress() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      IP = (prefs.getString('ip_address') ?? '');
+      int index = buspos.indexWhere((buspos) =>
+          buspos.Route == "${currentbsindex.toString()}.${cureta.toString()}");
+      curlat = buspos[index].lat;
+      curlng = buspos[index].lng;
     });
   }
 
-  // Save the IP address to persistent storage
-  _saveIPAddress(String value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('ip_address', value);
-    setState(() {
-      IP = (prefs.getString('ip_address') ?? '');
-    });
-  }
-
-  late Timer timer;
-  late Timer bstimer;
-  late Timer etatimer;
-  late Timer hctimer;
-  late Timer rtctimer;
-  late Timer curtimer;
-
-  @override
-  void initState() {
-    ReadCurrentLocation().then((value) {
-      setState(() {
-        buspos.addAll(value);
-      });
-    });
-    timeCheck();
-    timer = new Timer.periodic(Duration(seconds: 60), (_) => timeCheck());
-    super.initState();
-    rootBundle.rootBundle.loadString('jsonfile/darkgoogle.json').then((string) {
-      _darkStyle = string;
-    });
-    if (choice == "API") {
-      setState(() {
-        API();
-      });
-    } else if (choice == "MQTT") {
-      setState(() {
-        connect();
-      });
+  Future<bool> _handleLocationPermission() async {
+    bool serviceready;
+    LocationPermission perms;
+    serviceready = await Geolocator.isLocationServiceEnabled();
+    if (!serviceready) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Location services are disabled. Please enable locations')));
+      return false;
     }
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    getmarkericon();
-    _loadIPAddress();
+    perms = await Geolocator.checkPermission();
+    if (perms == LocationPermission.denied) {
+      perms = await Geolocator.requestPermission();
+      if (perms == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('There are no locations permission enabled')));
+        return false;
+      }
+    }
+    if (perms == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Location permissions are permanently denied, we cannot request permissions.')));
+      return false;
+    }
+    return true;
   }
 
-  @override
-  void dispose() {
-    connect();
-    super.dispose();
+  Future<List<BusStopClass>> ReadBusStopData() async {
+    //read json file
+    final jsondata =
+        await rootBundle.rootBundle.loadString('jsonfile/NPStops.json');
+    //decode json data as list
+    var busstops = <BusStopClass>[];
+
+    Map<String, dynamic> productsJson = json.decode(jsondata);
+    for (var productJson in productsJson['value']) {
+      busstops.add(BusStopClass.fromJson(productJson));
+    }
+    return busstops;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: _isDark ? ThemeData.dark() : ThemeData.light(),
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.red[400],
-          centerTitle: true,
-          leading: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: InkWell(
-              onTap: () => _showPopupMenu(),
-              child: Image.asset(
-                "jsonfile/Moovita1.png",
-                alignment: Alignment.center,
-              ),
-            ),
-          ),
-          title: Row(
-            children: [
-              InkWell(
-                onTap: () async {
-                  dynamic result = await Navigator.pushNamed(
-                    context,
-                    '/second',
-                    arguments: {
-                      'eta': etaaa.toString(),
-                      'mybs': mybs.toString(),
-                      'isDarkMode': _isDark
-                    },
-                  );
-                  setState(() {
-                    BusStop = {
-                      'BusStopCode': result['code'],
-                      'name': result['name'],
-                      'road': result['road'],
-                      'lat': result['lat'],
-                      'lng': result['lng']
-                    };
-                    Status = '';
-                    busstatus = '';
-                    timeCheck();
-                  });
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Color(0xff000000)),
-                      borderRadius: BorderRadius.all(Radius.circular(5))),
-                  height: 50.0,
-                  width: 240.0,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: BusStop['name'].isEmpty
-                        ? Center(
-                            child: SpinKitDualRing(
-                              color: Colors.red,
-                              size: 20.0,
-                            ),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                BusStop['name'],
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
-                                    color: Colors.black),
-                                textAlign: TextAlign.start,
-                              ),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    BusStop['BusStopCode'],
-                                    style: TextStyle(
-                                        fontSize: 12, color: Colors.black),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    BusStop['road'],
-                                    style: TextStyle(
-                                        fontSize: 12, color: Colors.black),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(30),
-          )),
-          actions: <Widget>[
-            Checkbox(
-              value: _isDark,
-              onChanged: (value) {
-                setState(() {
-                  _isDark = value!;
-                });
-              },
-            )
-          ],
-        ),
-        body: Center(
-          child: timechecked == false
-              ? Center(
-                  child: Card(
-                    child: Text(
-                      "Not Operating ATM",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                    ),
-                  ),
-                )
-              : Status.isEmpty
-                  ? Center(
-                      child: SpinKitDualRing(
-                        color: Colors.red,
-                        size: 20.0,
-                      ),
-                    )
-                  : Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Stack(
-                            children: [
-                              SizedBox(
-                                width: 500, // or use fixed size like 200
-                                height: 300,
-                                child: GoogleMap(
-                                  onMapCreated: (controller) {
-                                    //method called when map is created
-                                    setState(() {
-                                      mapController = controller;
-                                      mapController.setMapStyle(_darkStyle);
-                                    });
-                                  },
-                                  initialCameraPosition: CameraPosition(
-                                    target:
-                                        LatLng(BusStop['lat'], BusStop['lng']),
-                                    zoom: 16,
-                                  ),
-                                  markers: getmarkers(),
-                                  polylines: Set<Polyline>.of(polylines.values),
-                                  myLocationButtonEnabled: true,
-                                  myLocationEnabled: true,
-                                ),
-                              ),
-                              Align(
-                                alignment: Alignment.bottomLeft,
-                                // add your floating action button
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4.0),
-                                  child: FloatingActionButton(
-                                    backgroundColor: Colors.grey,
-                                    mini: true,
-                                    onPressed: () {
-                                      setState(() {
-                                        mapController.animateCamera(
-                                            CameraUpdate.newLatLngZoom(
-                                                LatLng(BusStop['lat'],
-                                                    BusStop['lng']),
-                                                16));
-                                      });
-                                    },
-                                    child: Icon(
-                                      Icons.map,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        InkWell(
-                          onTap: () {
-                            setState(() {
-                              mapController.animateCamera(
-                                  CameraUpdate.newLatLngZoom(
-                                      LatLng(curlat, curlng), 18));
-                            });
-                            mapController.showMarkerInfoWindow(
-                                MarkerId("CurrentBusPos"));
-                          },
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                children: [
-                                  Text("CURRENT ETA IS:",
-                                      style: TextStyle(fontSize: 40)),
-                                  Text(
-                                    Status,
-                                    style: TextStyle(
-                                        fontSize: 50,
-                                        fontWeight: FontWeight.bold),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        LinearPercentIndicator(
-                          alignment: MainAxisAlignment.center,
-                          width: 300.0,
-                          lineHeight: 20.0,
-                          percent: percentage,
-                          backgroundColor: Colors.white,
-                          progressColor: cap,
-                        ),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        Text(
-                          RTC,
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 40),
-                        )
-                      ],
-                    ),
-        ),
-      ),
-    );
+  Future<void> _getCurrentLocation() async {
+    await ReadBusStopData();
+    final hasPermission = await _handleLocationPermission();
+    if (!hasPermission) return;
+    await getMyLocation();
+  }
+
+  Future<void> getMyLocation() async {
+    await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
+        .then((Position position) {
+      distanceCalculation(position);
+      setState(() => _currentPosition = position);
+    }).catchError((e) {
+      debugPrint(e);
+    });
+    if (_currentPosition != null) {
+      // print(_currentPosition);
+      // print('Success');
+    } else if (_currentPosition == null) {
+      geotimer = Timer(Duration(seconds: 1), _getCurrentLocation);
+    }
+  }
+
+  distanceCalculation(Position position) async {
+    await ReadBusStopData();
+    bslist = [];
+    for (var d in bsstops) {
+      var m = Geolocator.distanceBetween(
+          position.latitude, position.longitude, d.lat, d.lng);
+      d.distance = m / 1000;
+      bslist.add(d);
+      // print(getDistanceFromLatLonInKm(position.latitude,position.longitude, d.lat,d.lng));
+    }
+    setState(() {
+      bslist.sort((a, b) {
+        return a.distance.compareTo(b.distance);
+      });
+      loadFavorites();
+    });
   }
 
   getmarkericon() async {
@@ -759,41 +452,158 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Set<Marker> getmarkers() {
-    markers = new Set();
+  int _currentIndex = 0;
+  late Timer timer;
+  late Timer bstimer;
+  late Timer etatimer;
+  late Timer hctimer;
+  late Timer rtctimer;
+  late Timer screentimer;
+
+  List<Widget> _screens = [];
+
+  updatescreen() async {
+    await loadmapstyle();
     setState(() {
-      markers = new Set();
-      markers.add(Marker(
-          markerId: MarkerId(BusStop['name']),
-          position: LatLng(BusStop['lat'], BusStop['lng']),
-          //position of marker
-          infoWindow: InfoWindow(
-              //popup info
-              title: BusStop['name'],
-              snippet: "${BusStop['BusStopCode']} ${BusStop['road']}"),
-          icon: markerbitmap,
-          onTap: () {
-            setState(() {
-              mapController.animateCamera(CameraUpdate.newLatLngZoom(
-                  LatLng(BusStop['lat'], BusStop['lng']), 18));
-            });
-          }));
-      markers.add(Marker(
-          markerId: MarkerId("CurrentBusPos"),
-          position: LatLng(curlat, curlng),
-          //position of marker
-          infoWindow: InfoWindow(
-              //popup info
-              title: "Current Bus Location",
-              snippet: "${busstatus}"),
-          icon: markerbitmap2,
-          onTap: () {
-            setState(() {
-              mapController.animateCamera(
-                  CameraUpdate.newLatLngZoom(LatLng(curlat, curlng), 14));
-            });
-          }));
+      _screens = [
+        BSScreen(
+          darkStyle: _darkStyle,
+          busstop: bslist[0],
+          curpos: LatLng(curlat, curlng),
+          bslist: bslist,
+          currentbusindex: currentbsindex,
+          ETA: cureta,
+          markerbitmap2: markerbitmap2,
+          markerbitmap: markerbitmap,
+          addtoFavorites: addToFavorites,
+          removeFromFavorites: removeFromFavorites,
+        ),
+        FavScreen(
+          darkStyle: _darkStyle,
+          curpos: LatLng(curlat, curlng),
+          bslist: favoritesList,
+          currentbusindex: currentbsindex,
+          ETA: cureta,
+          markerbitmap2: markerbitmap2,
+          markerbitmap: markerbitmap,
+          removeFromFavorites: removeFromFavorites,
+        ),
+        RouteScreen(
+          darkStyle: _darkStyle,
+          busstop: bslist[0],
+          curpos: LatLng(curlat, curlng),
+          bslist: bslist,
+          currentbusindex: currentbsindex,
+          ETA: cureta,
+          markerbitmap2: markerbitmap2,
+          markerbitmap: markerbitmap,
+          addtoFavorites: addToFavorites,
+          removeFromFavorites: removeFromFavorites,
+        ),
+      ];
     });
-    return markers;
+  }
+
+  API() {
+    getCurrentBS();
+    getCurrentETA();
+    getHeadCount();
+    updatescreen();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getCurrentBS();
+    getCurrentETA();
+    getHeadCount();
+    updatescreen();
+    ReadBusStopData().then((value) {
+      setState(() {
+        bsstops.addAll(value);
+      });
+    });
+    _getCurrentLocation();
+    timer =
+        new Timer.periodic(Duration(seconds: 60), (_) => _getCurrentLocation());
+    ReadCurrentLocation().then((value) {
+      setState(() {
+        buspos.addAll(value);
+      });
+    });
+    timeCheck();
+    timer = new Timer.periodic(Duration(seconds: 60), (_) => timeCheck());
+    bstimer = new Timer.periodic(Duration(seconds: 10), (_) {
+      API();
+    });
+    getmarkericon();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
+
+  // @override
+  // void dispose(){
+  //   super.dispose();
+  //   timer.cancel();
+  //   bstimer.cancel();
+  // }
+
+  loadmapstyle() {
+    rootBundle.rootBundle.loadString('jsonfile/darkgoogle.json').then((string) {
+      _darkStyle = string;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+        home: bslist.isEmpty && _screens.isEmpty
+            ? Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SpinKitDualRing(
+                      color: Colors.blue,
+                      size: 80,
+                      lineWidth: 4,
+                    ),
+                    Image.asset(
+                      'jsonfile/Moovita1.png', // Replace with your logo asset path
+                      width: 60,
+                      height: 60,
+                    ),
+                  ],
+                ),
+              )
+            : Scaffold(
+                body: _screens[_currentIndex],
+                bottomNavigationBar: BottomNavigationBar(
+                  currentIndex: _currentIndex,
+                  onTap: (index) {
+                    setState(() {
+                      _currentIndex = index;
+                    });
+                  },
+                  selectedItemColor: Colors.white,
+                  unselectedItemColor: Colors.white.withOpacity(0.6),
+                  backgroundColor: Color(0xFF671919),
+                  items: [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.directions_bus),
+                      label: 'Bus',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.favorite),
+                      label: 'Favorite',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.map),
+                      label: 'Route',
+                    ),
+                  ],
+                ),
+              ));
   }
 }

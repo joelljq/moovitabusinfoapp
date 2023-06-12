@@ -57,7 +57,9 @@ class _BSScreenState extends State<BSScreen> {
     diff = index - currentbusindex;
 
     etaa = widget.ETA;
-    if (diff > 1) {
+    if (etaa == -1) {
+      Status = "Not Operating";
+    } else if (diff > 1) {
       etaa = etaa + (3 * diff);
       Status = "${etaa.toString()} mins";
     } else if (diff < 0) {
@@ -201,8 +203,8 @@ class _BSScreenState extends State<BSScreen> {
                     ),
                   ),
                   Positioned(
-                    top:30,
-                    left:10,
+                    top: 30,
+                    left: 10,
                     child: InkWell(
                       onTap: () {
                         // Handle the onTap event
@@ -260,10 +262,9 @@ class _BSScreenState extends State<BSScreen> {
             onPressed: () {
               setState(() {
                 bslist[index].isFavorite = !bslist[index].isFavorite;
-                if(bslist[index].isFavorite == true){
+                if (bslist[index].isFavorite == true) {
                   widget.addtoFavorites(bslist[index]);
-                }
-                else if(bslist[index].isFavorite == false){
+                } else if (bslist[index].isFavorite == false) {
                   widget.removeFromFavorites(bslist[index]);
                 }
               });
@@ -294,7 +295,10 @@ class _BSScreenState extends State<BSScreen> {
             children: [
               Container(
                 width: 10,
-                color: Colors.blue,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                ),
               ),
               Expanded(
                 child: Padding(

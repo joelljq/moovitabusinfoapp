@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:moovitainfo/services/busstopclass.dart';
 import 'package:moovitainfo/services/notif.dart';
@@ -16,15 +15,16 @@ class FavScreen extends StatefulWidget {
   BitmapDescriptor markerbitmap2;
   Function(BusStopClass) removeFromFavorites;
 
-  FavScreen({Key? key,
-    required this.darkStyle,
-    required this.curpos,
-    required this.bslist,
-    required this.currentbusindex,
-    required this.ETA,
-    required this.markerbitmap,
-    required this.markerbitmap2,
-    required this.removeFromFavorites})
+  FavScreen(
+      {Key? key,
+      required this.darkStyle,
+      required this.curpos,
+      required this.bslist,
+      required this.currentbusindex,
+      required this.ETA,
+      required this.markerbitmap,
+      required this.markerbitmap2,
+      required this.removeFromFavorites})
       : super(key: key);
 
   @override
@@ -52,7 +52,9 @@ class _FavScreenState extends State<FavScreen> {
     diff = index - currentbusindex;
 
     etaa = widget.ETA;
-    if (diff > 1) {
+    if (etaa == -1) {
+      Status = "Not Operating";
+    } else if (diff > 1) {
       etaa = etaa + (3 * diff);
       Status = "${etaa.toString()} mins";
     } else if (diff < 0) {
@@ -97,30 +99,52 @@ class _FavScreenState extends State<FavScreen> {
   void initState() {
     super.initState();
     updatevalues();
+    if (bslist.isEmpty) {
+      busstop = BusStopClass(
+        code: '1',
+        name: 'King Albert Park',
+        road: 'S10202778B',
+        lat: 1.3365156413692878,
+        lng: 103.78278794804254,
+        isFavorite: false,
+        isAlert: false,
+      );
+    } else {
+      busstop = bslist[0];
+    }
     updatetimer = new Timer.periodic(Duration(seconds: 1), (_) {
       updatevalues();
     });
   }
+
   late Timer indextimer;
   void startTimer(int index) {
     indextimer = Timer.periodic(Duration(seconds: 1), (_) {
       // Fetch the current ETA for the selected bus stop
       final newETA = indexeta(int.parse(bslist[index].code));
-      if(newETA != currentETA){
+      if (newETA != currentETA) {
         currentETA = newETA;
-        if (currentETA == 0) {// Trigger the alert when ETA reaches 0
+        if (currentETA == 0) {
+          // Trigger the alert when ETA reaches 0
           indextimer.cancel();
-          NotificationService().showNotification(title: "Bus Alert System", body: "Bus has arrived at ${bslist[index].name}!", enableSound: true);// Stop the timer after the alert
+          NotificationService().showNotification(
+              title: "Bus Alert System",
+              body: "Bus has arrived at ${bslist[index].name}!",
+              enableSound: true); // Stop the timer after the alert
           bslist[index].isAlert = false;
-        }
-        else{
-          NotificationService().showNotification(title: "Bus Alert System", body: "Bus is arriving at ${bslist[index].name} in ${currentETA}min", isSilent: true, enableSound: false);
+        } else {
+          NotificationService().showNotification(
+              title: "Bus Alert System",
+              body:
+                  "Bus is arriving at ${bslist[index].name} in ${currentETA}min",
+              isSilent: true,
+              enableSound: false);
         }
       }
     });
   }
 
-  updatevalues(){
+  updatevalues() {
     setState(() {
       darkStyle = widget.darkStyle;
       markerbitmap = widget.markerbitmap;
@@ -129,109 +153,98 @@ class _FavScreenState extends State<FavScreen> {
       bslist = widget.bslist;
       currentbusindex = widget.currentbusindex;
       etaa = widget.ETA;
-
-      if(bslist.isEmpty){
-        busstop = BusStopClass(
-          code: '1',
-          name: 'King Albert Park',
-          road: 'S10202778B',
-          lat: 1.3365156413692878,
-          lng: 103.78278794804254,
-          isFavorite: false,
-          isAlert: false,
-        );
-      }
-      else{
-        busstop = bslist[0];
-      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return bslist.isEmpty?  Center(
-      child: Text("You have yet to favourite any bus stops", style: TextStyle(fontSize: 30),)
-    ): Column(
-      children: [
-        Stack(
-          children: [
-            SizedBox(
-              width: 500, // or use fixed size like 200
-              height: 350,
-              child: GoogleMap(
-                onMapCreated: (controller) {
-                  //method called when map is created
-                  setState(() {
-                    mapController = controller;
-                    mapController.setMapStyle(darkStyle);
-                  });
-                },
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(busstop.lat, busstop.lng),
-                  zoom: 16,
-                ),
-                markers: getmarkers(),
-                myLocationButtonEnabled: true,
-                myLocationEnabled: true,
-              ),
-            ),
-            Positioned(
-              top: 30,
-              left: 100,
-              right: 100,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    "${busstop.name}",
-                    style: TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
+    return bslist.isEmpty
+        ? Center(
+            child: Text(
+            "You have yet to favourite any bus stops",
+            style: TextStyle(fontSize: 30),
+          ))
+        : Column(
+            children: [
+              Stack(
+                children: [
+                  SizedBox(
+                    width: 500, // or use fixed size like 200
+                    height: 350,
+                    child: GoogleMap(
+                      onMapCreated: (controller) {
+                        //method called when map is created
+                        setState(() {
+                          mapController = controller;
+                          mapController.setMapStyle(darkStyle);
+                        });
+                      },
+                      initialCameraPosition: CameraPosition(
+                        target: LatLng(busstop.lat, busstop.lng),
+                        zoom: 16,
+                      ),
+                      markers: getmarkers(),
+                      myLocationButtonEnabled: true,
+                      myLocationEnabled: true,
+                    ),
                   ),
-                ),
+                  Positioned(
+                    top: 30,
+                    left: 100,
+                    right: 100,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          "${busstop.name}",
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 30,
+                    left: 10,
+                    child: InkWell(
+                      onTap: () {
+                        // Handle the onTap event
+                        // Add your desired functionality here
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.asset(
+                          'jsonfile/Moovita1.png', // Replace with your image path
+                          width: 40,
+                          height: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            Positioned(
-              top:30,
-              left:10,
-              child: InkWell(
-                onTap: () {
-                  // Handle the onTap event
-                  // Add your desired functionality here
-                },
+              Expanded(
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Image.asset(
-                    'jsonfile/Moovita1.png', // Replace with your image path
-                    width: 40,
-                    height: 40,
+                  child: ListView.builder(
+                    itemCount: bslist.length,
+                    itemBuilder: (context, index) {
+                      return _listitems(index);
+                    },
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-        Expanded(
-          child: Container(
-            child: ListView.builder(
-              itemCount: bslist.length,
-              itemBuilder: (context, index) {
-                return _listitems(index);
-              },
-            ),
-          ),
-        ),
-      ],
-    );
+            ],
+          );
   }
 
   _listitems(index) {
@@ -295,18 +308,24 @@ class _FavScreenState extends State<FavScreen> {
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Text('ETA: ${status(int.parse(bslist[index].code))}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),),
+                      child: Text(
+                        'ETA: ${status(int.parse(bslist[index].code))}',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.notifications, color: bslist[index].isAlert ? Colors.red : Colors.grey,),
+                    icon: Icon(
+                      Icons.notifications,
+                      color: bslist[index].isAlert ? Colors.red : Colors.grey,
+                    ),
                     onPressed: () {
                       setState(() {
                         bslist[index].isAlert = !bslist[index].isAlert;
-                        if(bslist[index].isAlert == true){
+                        if (bslist[index].isAlert == true) {
                           startTimer(index);
-                        }
-                        else{
+                        } else {
                           indextimer.cancel();
                         }
                       });
@@ -320,8 +339,9 @@ class _FavScreenState extends State<FavScreen> {
             // Handle the onExpansionChanged event here
             if (isExpanded) {
               busstop = bslist[index];
-              mapController.animateCamera(
-                  CameraUpdate.newLatLngZoom(LatLng(busstop.lat, busstop.lng), 16));
+              print(busstop.name);
+              mapController.animateCamera(CameraUpdate.newLatLngZoom(
+                  LatLng(busstop.lat, busstop.lng), 16));
             }
           },
         ));
@@ -336,7 +356,7 @@ class _FavScreenState extends State<FavScreen> {
           position: LatLng(busstop.lat, busstop.lng),
           //position of marker
           infoWindow: InfoWindow(
-            //popup info
+              //popup info
               title: busstop.name,
               snippet: "${busstop.code} ${busstop.road}"),
           icon: markerbitmap,
@@ -351,7 +371,7 @@ class _FavScreenState extends State<FavScreen> {
           position: curpos,
           //position of marker
           infoWindow: InfoWindow(
-            //popup info
+              //popup info
               title: "Current Bus Location ${currentbusindex}",
               snippet: "${widget.ETA}"),
           icon: markerbitmap2,
