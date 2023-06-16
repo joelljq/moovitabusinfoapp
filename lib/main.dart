@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as rootBundle;
 import 'package:flutter/services.dart';
@@ -99,13 +99,47 @@ class _MyAppState extends State<MyApp> {
   String RTC = '';
   bool second = false;
   bool timechecked = false;
-  bool _isDark = false;
+  bool style = false;
   double curlat = 0.0;
   double curlng = 0.0;
   double percentage = 0.0;
   Color cap = Colors.green;
   List<CurrentLocationClass> buspos = [];
   List<BusStopClass> favoritesList = [];
+  late Color background;
+
+  Future<void> saveStyleOption(bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('styleOption', value);
+  }
+
+  Future<bool> getStyleOption() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('styleOption') ?? false;
+  }
+
+  Color hcstatus(String HeadCount){
+    int HeadC = int.parse(HeadCount);
+    if(HeadC < 4){
+      return Colors.green;
+    }
+    else if (HeadC < 8){
+      return Colors.yellow;
+    }
+    else{
+      return Colors.red;
+    }
+  }
+
+
+  void setstyle(){
+    setState(() {
+      style = !style;
+      saveStyleOption(style);
+      updatescreen();
+      background = style == false ? Colors.white: Colors.black;
+    });
+  }
 
   void loadFavorites() {
     setState(() {
@@ -443,11 +477,11 @@ class _MyAppState extends State<MyApp> {
 
   getmarkericon() async {
     markerbitmap = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(),
+      const ImageConfiguration(),
       "jsonfile/transport1.png",
     );
     markerbitmap2 = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(),
+      const ImageConfiguration(),
       "jsonfile/bus.png",
     );
   }
@@ -467,6 +501,9 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _screens = [
         BSScreen(
+          busstatus: hcstatus(HC),
+          setstyle: setstyle,
+          style: style,
           darkStyle: _darkStyle,
           busstop: bslist[0],
           curpos: LatLng(curlat, curlng),
@@ -479,6 +516,9 @@ class _MyAppState extends State<MyApp> {
           removeFromFavorites: removeFromFavorites,
         ),
         FavScreen(
+          busstatus: hcstatus(HC),
+          setstyle: setstyle,
+          style: style,
           darkStyle: _darkStyle,
           curpos: LatLng(curlat, curlng),
           bslist: favoritesList,
@@ -489,6 +529,8 @@ class _MyAppState extends State<MyApp> {
           removeFromFavorites: removeFromFavorites,
         ),
         RouteScreen(
+          setstyle: setstyle,
+          style: style,
           darkStyle: _darkStyle,
           busstop: bslist[0],
           curpos: LatLng(curlat, curlng),
@@ -518,6 +560,12 @@ class _MyAppState extends State<MyApp> {
     getCurrentETA();
     getHeadCount();
     updatescreen();
+    getStyleOption().then((value) {
+      setState(() {
+        style = value;
+        background = style == false ? Colors.white: Colors.black;
+      });
+    });
     ReadBusStopData().then((value) {
       setState(() {
         bsstops.addAll(value);
@@ -531,9 +579,7 @@ class _MyAppState extends State<MyApp> {
         buspos.addAll(value);
       });
     });
-    timeCheck();
-    timer = new Timer.periodic(Duration(seconds: 60), (_) => timeCheck());
-    bstimer = new Timer.periodic(Duration(seconds: 10), (_) {
+    bstimer = new Timer.periodic(Duration(seconds: 5), (_) {
       API();
     });
     getmarkericon();
@@ -542,6 +588,7 @@ class _MyAppState extends State<MyApp> {
       DeviceOrientation.portraitDown,
     ]);
   }
+
 
   // @override
   // void dispose(){
@@ -586,8 +633,8 @@ class _MyAppState extends State<MyApp> {
                       _currentIndex = index;
                     });
                   },
-                  selectedItemColor: Colors.white,
-                  unselectedItemColor: Colors.white.withOpacity(0.6),
+                  selectedItemColor: background,
+                  unselectedItemColor: background.withOpacity(0.6),
                   backgroundColor: Color(0xFF671919),
                   items: [
                     BottomNavigationBarItem(

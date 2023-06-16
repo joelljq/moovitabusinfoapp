@@ -7,19 +7,25 @@ import 'package:moovitainfo/services/busstopclass.dart';
 import 'package:moovitainfo/services/notif.dart';
 
 class BSScreen extends StatefulWidget {
+  bool style;
   String darkStyle;
   BusStopClass busstop;
   LatLng curpos;
   List<BusStopClass> bslist;
   int currentbusindex;
   int ETA;
+  Color busstatus;
   BitmapDescriptor markerbitmap;
   BitmapDescriptor markerbitmap2;
   Function(BusStopClass) addtoFavorites;
   Function(BusStopClass) removeFromFavorites;
+  final VoidCallback setstyle;
 
   BSScreen(
       {Key? key,
+        required this.busstatus,
+      required this.setstyle,
+      required this.style,
       required this.darkStyle,
       required this.busstop,
       required this.curpos,
@@ -46,8 +52,22 @@ class _BSScreenState extends State<BSScreen> {
   late List<BusStopClass> bslist;
   late int currentbusindex;
   late int etaa;
+  late bool style;
+  late Color background;
+  late Color primary;
+  late Color busstatus;
   int currentETA = 0;
   Set<Marker> markers = new Set();
+
+  String mapstyle() {
+    String mapstyle;
+    if (style == false) {
+      mapstyle = "[]";
+    } else {
+      mapstyle = darkStyle;
+    }
+    return mapstyle;
+  }
 
   String status(int currentcode) {
     int index = 0;
@@ -104,10 +124,16 @@ class _BSScreenState extends State<BSScreen> {
   @override
   void initState() {
     super.initState();
-    updatevalues();
+    inputvalues();
     updatetimer = new Timer.periodic(Duration(seconds: 1), (_) {
       updatevalues();
     });
+  }
+
+  @override
+  void dispose(){
+    super.dispose();
+    updatetimer.cancel();
   }
 
   late Timer indextimer;
@@ -140,10 +166,28 @@ class _BSScreenState extends State<BSScreen> {
 
   updatevalues() {
     setState(() {
+      busstatus = widget.busstatus;
       curpos = widget.curpos;
       bslist = widget.bslist;
       currentbusindex = widget.currentbusindex;
       etaa = widget.ETA;
+      style = widget.style;
+      mapController.setMapStyle(mapstyle());
+      background = style == false ? Colors.white: Colors.black;
+      primary = style == true ? Colors.white: Colors.black;
+    });
+  }
+
+  inputvalues() {
+    setState(() {
+      busstatus = widget.busstatus;
+      curpos = widget.curpos;
+      bslist = widget.bslist;
+      currentbusindex = widget.currentbusindex;
+      etaa = widget.ETA;
+      style = widget.style;
+      background = style == false ? Colors.white: Colors.black;
+      primary = style == true ? Colors.white: Colors.black;
     });
   }
 
@@ -162,13 +206,13 @@ class _BSScreenState extends State<BSScreen> {
                 children: [
                   SizedBox(
                     width: 500, // or use fixed size like 200
-                    height: 350,
+                    height: 400,
                     child: GoogleMap(
                       onMapCreated: (controller) {
                         //method called when map is created
                         setState(() {
                           mapController = controller;
-                          mapController.setMapStyle(darkStyle);
+                          mapController.setMapStyle(mapstyle());
                         });
                       },
                       initialCameraPosition: CameraPosition(
@@ -184,20 +228,22 @@ class _BSScreenState extends State<BSScreen> {
                     top: 30,
                     left: 100,
                     right: 100,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          "${busstop.name}",
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
+                    child: SafeArea(
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: background,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "${busstop.name}",
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold, color: primary),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
                     ),
@@ -205,20 +251,19 @@ class _BSScreenState extends State<BSScreen> {
                   Positioned(
                     top: 30,
                     left: 10,
-                    child: InkWell(
-                      onTap: () {
-                        // Handle the onTap event
-                        // Add your desired functionality here
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Image.asset(
-                          'jsonfile/Moovita1.png', // Replace with your image path
-                          width: 40,
-                          height: 40,
+                    child: SafeArea(
+                      child: InkWell(
+                        onTap: widget.setstyle,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: background,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Image.asset(
+                            'jsonfile/Moovita1.png', // Replace with your image path
+                            width: 40,
+                            height: 40,
+                          ),
                         ),
                       ),
                     ),
@@ -226,7 +271,9 @@ class _BSScreenState extends State<BSScreen> {
                 ],
               ),
               Expanded(
-                child: Container(
+                child: MediaQuery.removePadding(
+                  context: context,
+                  removeTop: true,
                   child: ListView.builder(
                     itemCount: bslist.length,
                     itemBuilder: (context, index) {
@@ -240,103 +287,106 @@ class _BSScreenState extends State<BSScreen> {
   }
 
   _listitems(index) {
-    return ExpansionTile(
-      collapsedBackgroundColor: Colors.white,
-      // Set the background color of the collapsed tile
-      backgroundColor: Colors.white,
-      // Set the background color of the expanded tile
-      title: Row(
-        children: [
-          Text(
-            bslist[index].name.toString(),
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.favorite,
-              color: bslist[index].isFavorite ? Colors.red : Colors.grey,
-            ),
-            onPressed: () {
-              setState(() {
-                bslist[index].isFavorite = !bslist[index].isFavorite;
-                if (bslist[index].isFavorite == true) {
-                  widget.addtoFavorites(bslist[index]);
-                } else if (bslist[index].isFavorite == false) {
-                  widget.removeFromFavorites(bslist[index]);
-                }
-              });
-            },
-          ),
-        ],
-      ),
-      subtitle: Row(
-        children: [
-          Text(
-            bslist[index].code.toString(),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(width: 10),
-          Text(
-            bslist[index].road.toString(),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-      children: [
-        Card(
-          child: Row(
-            children: [
-              Container(
-                width: 10,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                ),
+    return Theme(
+      data: style? ThemeData.dark() : ThemeData.light(),
+      child: ExpansionTile(
+        collapsedBackgroundColor: background,
+        // Set the background color of the collapsed tile
+        backgroundColor: background,
+        // Set the background color of the expanded tile
+        title: Row(
+          children: [
+            Text(
+              bslist[index].name.toString(),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    'ETA: ${status(int.parse(bslist[index].code))}',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.favorite,
+                color: bslist[index].isFavorite ? Colors.red : Colors.grey,
+              ),
+              onPressed: () {
+                setState(() {
+                  bslist[index].isFavorite = !bslist[index].isFavorite;
+                  if (bslist[index].isFavorite == true) {
+                    widget.addtoFavorites(bslist[index]);
+                  } else if (bslist[index].isFavorite == false) {
+                    widget.removeFromFavorites(bslist[index]);
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Text(
+              bslist[index].code.toString(),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(width: 10),
+            Text(
+              bslist[index].road.toString(),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        children: [
+          Card(
+            child: Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: busstatus,
                   ),
                 ),
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.notifications,
-                  color: bslist[index].isAlert ? Colors.red : Colors.grey,
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'ETA: ${status(int.parse(bslist[index].code))}',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ),
-                onPressed: () {
-                  setState(() {
-                    bslist[index].isAlert = !bslist[index].isAlert;
-                    if (bslist[index].isAlert == true) {
-                      startTimer(index);
-                    } else {
-                      indextimer.cancel();
-                    }
-                  });
-                },
-              ),
-            ],
-          ),
-        )
-      ],
-      onExpansionChanged: (isExpanded) {
-        // Handle the onExpansionChanged event here
-        if (isExpanded) {
-          busstop = bslist[index];
-          mapController.animateCamera(
-              CameraUpdate.newLatLngZoom(LatLng(busstop.lat, busstop.lng), 16));
-        }
-      },
+                IconButton(
+                  icon: Icon(
+                    Icons.notifications,
+                    color: bslist[index].isAlert ? Colors.red : Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      bslist[index].isAlert = !bslist[index].isAlert;
+                      if (bslist[index].isAlert == true) {
+                        startTimer(index);
+                      } else {
+                        indextimer.cancel();
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+          )
+        ],
+        onExpansionChanged: (isExpanded) {
+          // Handle the onExpansionChanged event here
+          if (isExpanded) {
+            busstop = bslist[index];
+            mapController.animateCamera(
+                CameraUpdate.newLatLngZoom(LatLng(busstop.lat, busstop.lng), 16));
+          }
+        },
+      ),
     );
   }
 

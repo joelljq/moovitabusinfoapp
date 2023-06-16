@@ -20,9 +20,13 @@ class RouteScreen extends StatefulWidget {
   BitmapDescriptor markerbitmap2;
   Function(BusStopClass) addtoFavorites;
   Function(BusStopClass) removeFromFavorites;
+  bool style;
+  final VoidCallback setstyle;
 
   RouteScreen(
       {Key? key,
+      required this.setstyle,
+      required this.style,
       required this.darkStyle,
       required this.busstop,
       required this.curpos,
@@ -57,6 +61,9 @@ class _RouteScreenState extends State<RouteScreen> {
   Set<Marker> markers = new Set();
   late String _fromOption;
   late String _toOption;
+  late Color background;
+  late Color primary;
+  late bool style;
 
   _addPolyLine(List<LatLng> polylineCoordinates) {
     PolylineId id = PolylineId("poly");
@@ -104,10 +111,13 @@ class _RouteScreenState extends State<RouteScreen> {
 
   updatevalues() {
     setState(() {
+      style = widget.style;
       curpos = widget.curpos;
       bslist = widget.bslist;
       currentbusindex = widget.currentbusindex;
       etaa = widget.ETA;
+      background = style == false ? Colors.white : Colors.black;
+      primary = style == true ? Colors.white : Colors.black;
     });
   }
 
@@ -129,23 +139,47 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: background,
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child: Container(
-                alignment: Alignment.center,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    "Where do you want \n to go today?",
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
+              child: Stack(
+                children: [
+                  Container(
+                    color: background,
+                    alignment: Alignment.center,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        "Where do you want \n to go today?",
+                        style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: primary),
+                      ),
                     ),
                   ),
-                ),
+                  Positioned(
+                    top: 30,
+                    left: 10,
+                    child: InkWell(
+                      onTap: widget.setstyle,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: background,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.asset(
+                          'jsonfile/Moovita1.png',
+                          // Replace with your image path
+                          width: 40,
+                          height: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Container(
@@ -163,7 +197,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: background,
                         borderRadius: BorderRadius.circular(20.0),
                       ),
                       child: Padding(
@@ -193,7 +227,8 @@ class _RouteScreenState extends State<RouteScreen> {
                                                       busStop.name,
                                                       style: TextStyle(
                                                           fontWeight:
-                                                              FontWeight.bold),
+                                                              FontWeight.bold,
+                                                          color: primary),
                                                     ),
                                                   ))
                                               .toList(),
@@ -233,8 +268,8 @@ class _RouteScreenState extends State<RouteScreen> {
                                                         busStop.name,
                                                         style: TextStyle(
                                                             fontWeight:
-                                                                FontWeight
-                                                                    .bold),
+                                                                FontWeight.bold,
+                                                            color: primary),
                                                       ),
                                                     ))
                                                 .toList(),
@@ -264,7 +299,7 @@ class _RouteScreenState extends State<RouteScreen> {
                                 angle: 90 * 3.141592653589793238 / 180,
                                 child: Icon(
                                   Icons.swap_horiz,
-                                  color: Colors.black,
+                                  color: primary,
                                   size: 40,
                                 ),
                               ),
@@ -284,7 +319,7 @@ class _RouteScreenState extends State<RouteScreen> {
                               MaterialStateProperty.all<Color>(Colors.white),
                           shape: MaterialStateProperty.all<OutlinedBorder>(
                             RoundedRectangleBorder(
-                              side: BorderSide(color: Colors.white),
+                              side: BorderSide(color: background),
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
@@ -318,6 +353,7 @@ class _RouteScreenState extends State<RouteScreen> {
                                 context: context,
                                 builder: (context) => BottomSheetWidget(
                                   key: UniqueKey(),
+                                  style: style,
                                   string1: bslist[_fselectedIndex].code,
                                   string2: bslist[_tselectedIndex].code,
                                   string3: (widget.ETA).toString(),
@@ -333,7 +369,7 @@ class _RouteScreenState extends State<RouteScreen> {
                             });
                           }
                         },
-                        child: Text("Enter Search"),
+                        child: Text("Enter Search", style: TextStyle(color: background),),
                       ),
                     ),
                   ],

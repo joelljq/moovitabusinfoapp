@@ -6,9 +6,11 @@ class BottomSheetWidget extends StatefulWidget {
   final String string2;
   final String string3;
   final String string4;
+  final bool style;
 
   BottomSheetWidget(
       {required Key key,
+      required this.style,
       required this.string1,
       required this.string2,
       required this.string3,
@@ -27,6 +29,9 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
   int duration = 0;
   String departure = '';
   String arrival = '';
+  late bool style = widget.style;
+  late Color background;
+  late Color primary;
   List<String> bstoplist = [
     'King Albert Park',
     'Main Entrance',
@@ -84,6 +89,8 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
   void initState() {
     super.initState();
     getBusStatus();
+    background = style == false ? Colors.white : Colors.black;
+    primary = style == true ? Colors.white : Colors.black;
   }
 
   @override
@@ -157,7 +164,7 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: background,
                 borderRadius: BorderRadius.circular(20.0),
               ),
               child: Padding(
@@ -175,8 +182,15 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey[600])),
                               SizedBox.fromSize(
-                                  size: Size.fromHeight(40.0),
-                                  child: Text(bstoplist[fromindex - 1], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20))),
+                                size: Size.fromHeight(40.0),
+                                child: Text(
+                                  bstoplist[fromindex - 1],
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: primary),
+                                ),
+                              ),
                               // add other widget as child of column
                             ],
                           ),
@@ -190,8 +204,15 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
                                         fontWeight: FontWeight.bold,
                                         color: Colors.grey[600])),
                                 SizedBox.fromSize(
-                                    size: Size.fromHeight(40.0),
-                                    child: Text(bstoplist[toindex - 1], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),),
+                                  size: Size.fromHeight(40.0),
+                                  child: Text(
+                                    bstoplist[toindex - 1],
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20,
+                                        color: primary),
+                                  ),
+                                ),
                                 // add other widget as child of column
                               ],
                             ),
@@ -203,18 +224,30 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
                 ),
               ),
             ),
-            SizedBox(height: 10,),
+            SizedBox(
+              height: 10,
+            ),
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.white
-              ),
+                  borderRadius: BorderRadius.circular(10), color: background),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
-                    Text("${departure} - ${arrival}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),),
-                    Text("${duration.toString()} Mins Duration", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),)
+                    Text(
+                      "${departure} - ${arrival}",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 30,
+                          color: primary),
+                    ),
+                    Text(
+                      "${duration.toString()} Mins Duration",
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: primary),
+                    )
                   ],
                 ),
               ),
