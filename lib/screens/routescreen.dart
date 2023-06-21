@@ -10,14 +10,15 @@ import 'package:moovitainfo/services/notif.dart';
 import 'package:moovitainfo/services/routesheet.dart';
 
 class RouteScreen extends StatefulWidget {
+  GlobalKey<ScaffoldState> scaffoldkey;
   String darkStyle;
   BusStopClass busstop;
   LatLng curpos;
   List<BusStopClass> bslist;
   int currentbusindex;
   int ETA;
-  BitmapDescriptor markerbitmap;
-  BitmapDescriptor markerbitmap2;
+  // BitmapDescriptor markerbitmap;
+  // BitmapDescriptor markerbitmap2;
   Function(BusStopClass) addtoFavorites;
   Function(BusStopClass) removeFromFavorites;
   bool style;
@@ -25,6 +26,7 @@ class RouteScreen extends StatefulWidget {
 
   RouteScreen(
       {Key? key,
+        required this.scaffoldkey,
       required this.setstyle,
       required this.style,
       required this.darkStyle,
@@ -33,8 +35,6 @@ class RouteScreen extends StatefulWidget {
       required this.bslist,
       required this.currentbusindex,
       required this.ETA,
-      required this.markerbitmap,
-      required this.markerbitmap2,
       required this.addtoFavorites,
       required this.removeFromFavorites})
       : super(key: key);
@@ -44,11 +44,10 @@ class RouteScreen extends StatefulWidget {
 }
 
 class _RouteScreenState extends State<RouteScreen> {
+  late GlobalKey<ScaffoldState> _scaffoldKey = widget.scaffoldkey;
   late String darkStyle = widget.darkStyle;
   late GoogleMapController mapController;
   late BusStopClass busstop = widget.busstop;
-  late BitmapDescriptor markerbitmap = widget.markerbitmap;
-  late BitmapDescriptor markerbitmap2 = widget.markerbitmap2;
   late LatLng curpos;
   late List<BusStopClass> bslist;
   late int currentbusindex;
@@ -109,6 +108,12 @@ class _RouteScreenState extends State<RouteScreen> {
     });
   }
 
+  @override
+  void dispose(){
+    super.dispose();
+    updatetimer.cancel();
+  }
+
   updatevalues() {
     setState(() {
       style = widget.style;
@@ -164,7 +169,9 @@ class _RouteScreenState extends State<RouteScreen> {
                     top: 30,
                     left: 10,
                     child: InkWell(
-                      onTap: widget.setstyle,
+                      onTap: (){
+                        _scaffoldKey.currentState?.openDrawer();
+                      },
                       child: Container(
                         decoration: BoxDecoration(
                           color: background,
@@ -382,38 +389,4 @@ class _RouteScreenState extends State<RouteScreen> {
     );
   }
 
-  Set<Marker> getmarkers() {
-    setState(() {
-      for (var destination in bslist) {
-        markers.add(Marker(
-            markerId: MarkerId('${destination.name} ${destination.road}'),
-            position: LatLng(destination.lat, destination.lng),
-
-            //position of marker
-            infoWindow: InfoWindow(
-              //popup info
-              title: destination.name,
-              snippet: "${destination.code} ${destination.road}",
-              onTap: () {
-                BusStopClass instance = destination;
-                Navigator.pop(context, {
-                  'code': instance.code,
-                  'name': instance.name,
-                  'road': instance.road,
-                  'lat': instance.lat,
-                  'lng': instance.lng
-                });
-              },
-            ),
-            icon: markerbitmap,
-            onTap: () {
-              setState(() {
-                mapController.animateCamera(CameraUpdate.newLatLngZoom(
-                    LatLng(destination.lat, destination.lng), 17));
-              });
-            }));
-      }
-    });
-    return markers;
-  }
 }

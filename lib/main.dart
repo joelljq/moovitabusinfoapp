@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:moovitainfo/settings.dart';
+import 'package:moovitainfo/survey.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as rootBundle;
@@ -107,6 +109,9 @@ class _MyAppState extends State<MyApp> {
   List<CurrentLocationClass> buspos = [];
   List<BusStopClass> favoritesList = [];
   late Color background;
+  late Color primary;
+  int refresh = 5;
+  bool _isNotificationDisabled = false;
 
   Future<void> saveStyleOption(bool value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -118,26 +123,44 @@ class _MyAppState extends State<MyApp> {
     return prefs.getBool('styleOption') ?? false;
   }
 
-  Color hcstatus(String HeadCount){
+  Future<bool> getNotifsOption() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('notificationOption') ?? false;
+  }
+
+  Future<int> getRefreshOption() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('getRefreshOption') ?? 5;
+  }
+
+  Future<void> setNotifsOption(bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notificationOption', value);
+  }
+
+  Future<void> setRefreshOption(int value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('getRefreshOption', value);
+  }
+
+  Color hcstatus(String HeadCount) {
     int HeadC = int.parse(HeadCount);
-    if(HeadC < 4){
+    if (HeadC < 4) {
       return Colors.green;
-    }
-    else if (HeadC < 8){
+    } else if (HeadC < 8) {
       return Colors.yellow;
-    }
-    else{
+    } else {
       return Colors.red;
     }
   }
 
-
-  void setstyle(){
+  void setstyle() {
     setState(() {
       style = !style;
       saveStyleOption(style);
       updatescreen();
-      background = style == false ? Colors.white: Colors.black;
+      background = style == false ? Colors.white : Colors.black;
+      primary = style == true ? Colors.white : Colors.black;
     });
   }
 
@@ -276,49 +299,53 @@ class _MyAppState extends State<MyApp> {
 
   getBusStatus(String ETAA) async {
     int index = 0;
-    etaa = nearestMinute(ETAA);
-    cureta = nearestMinute(ETAA);
-    if (cureta > 2) {
-      cureta = 2;
+    if (ETAA == "") {
+      Status = "Not Avail";
     } else {
-      cureta = cureta;
-    }
-    etaaa = etaa;
-    if (message1.isNotEmpty || CurrentBS.isNotEmpty) {
-      if (etaa != 0) {
-        if (mybs > 1) {
-          mybs = currentbsindex - 1;
-        } else if (mybs < 1) {
+      etaa = nearestMinute(ETAA);
+      cureta = nearestMinute(ETAA);
+      if (cureta > 2) {
+        cureta = 2;
+      } else {
+        cureta = cureta;
+      }
+      etaaa = etaa;
+      if (message1.isNotEmpty || CurrentBS.isNotEmpty) {
+        if (etaa != 0) {
+          if (mybs > 1) {
+            mybs = currentbsindex - 1;
+          } else if (mybs < 1) {
+            mybs = currentbsindex;
+          }
+        } else if (etaa == 0) {
           mybs = currentbsindex;
         }
-      } else if (etaa == 0) {
-        mybs = currentbsindex;
       }
-    }
 
-    int diff = 0;
-    index = int.parse(bslist[0].code);
-    diff = index - currentbsindex;
-    if (diff > 1) {
-      etaa = etaa + (3 * diff);
-      Status = "${etaa.toString()} mins";
-      getcurrentbusindex(etaa);
-    } else if (diff < 0) {
-      etaa = etaa + (3 * (11 + diff));
-      Status = "${etaa.toString()} mins";
-      getcurrentbusindex(etaa);
-    } else if (diff == 0) {
-      if (etaa > 0) {
+      int diff = 0;
+      index = int.parse(bslist[0].code);
+      diff = index - currentbsindex;
+      if (diff > 1) {
+        etaa = etaa + (3 * diff);
         Status = "${etaa.toString()} mins";
         getcurrentbusindex(etaa);
-      } else {
-        Status = "Arrived";
+      } else if (diff < 0) {
+        etaa = etaa + (3 * (11 + diff));
+        Status = "${etaa.toString()} mins";
+        getcurrentbusindex(etaa);
+      } else if (diff == 0) {
+        if (etaa > 0) {
+          Status = "${etaa.toString()} mins";
+          getcurrentbusindex(etaa);
+        } else {
+          Status = "Arrived";
+          getcurrentbusindex(etaa);
+        }
+      } else if (diff == 1) {
+        etaa = etaa + 3;
+        Status = "${etaa.toString()} mins";
         getcurrentbusindex(etaa);
       }
-    } else if (diff == 1) {
-      etaa = etaa + 3;
-      Status = "${etaa.toString()} mins";
-      getcurrentbusindex(etaa);
     }
   }
 
@@ -476,14 +503,27 @@ class _MyAppState extends State<MyApp> {
   }
 
   getmarkericon() async {
-    markerbitmap = await BitmapDescriptor.fromAssetImage(
-      const ImageConfiguration(),
-      "jsonfile/transport1.png",
-    );
-    markerbitmap2 = await BitmapDescriptor.fromAssetImage(
-      const ImageConfiguration(),
-      "jsonfile/bus.png",
-    );
+    bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    if (isIOS) {
+      markerbitmap = await BitmapDescriptor.fromAssetImage(
+        const ImageConfiguration(),
+        "jsonfile/transport1_ios.png",
+      );
+      markerbitmap2 = await BitmapDescriptor.fromAssetImage(
+        const ImageConfiguration(),
+        "jsonfile/bus_ios.png",
+      );
+    } else {
+      markerbitmap = await BitmapDescriptor.fromAssetImage(
+        const ImageConfiguration(),
+        "jsonfile/transport1.png",
+      );
+      markerbitmap2 = await BitmapDescriptor.fromAssetImage(
+        const ImageConfiguration(),
+        "jsonfile/bus.png",
+      );
+    }
   }
 
   int _currentIndex = 0;
@@ -501,6 +541,7 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _screens = [
         BSScreen(
+          scaffoldkey: _scaffoldKey,
           busstatus: hcstatus(HC),
           setstyle: setstyle,
           style: style,
@@ -516,6 +557,7 @@ class _MyAppState extends State<MyApp> {
           removeFromFavorites: removeFromFavorites,
         ),
         FavScreen(
+          scaffoldkey: _scaffoldKey,
           busstatus: hcstatus(HC),
           setstyle: setstyle,
           style: style,
@@ -529,6 +571,7 @@ class _MyAppState extends State<MyApp> {
           removeFromFavorites: removeFromFavorites,
         ),
         RouteScreen(
+          scaffoldkey: _scaffoldKey,
           setstyle: setstyle,
           style: style,
           darkStyle: _darkStyle,
@@ -537,8 +580,6 @@ class _MyAppState extends State<MyApp> {
           bslist: bslist,
           currentbusindex: currentbsindex,
           ETA: cureta,
-          markerbitmap2: markerbitmap2,
-          markerbitmap: markerbitmap,
           addtoFavorites: addToFavorites,
           removeFromFavorites: removeFromFavorites,
         ),
@@ -560,10 +601,27 @@ class _MyAppState extends State<MyApp> {
     getCurrentETA();
     getHeadCount();
     updatescreen();
+
     getStyleOption().then((value) {
       setState(() {
         style = value;
-        background = style == false ? Colors.white: Colors.black;
+        background = style == false ? Colors.white : Colors.black;
+        primary = style == true ? Colors.white : Colors.black;
+      });
+    });
+    getNotifsOption().then((value) {
+      setState(() {
+        _isNotificationDisabled = value;
+      });
+    });
+    getNotifsOption().then((value) {
+      setState(() {
+        _isNotificationDisabled = value;
+      });
+    });
+    getRefreshOption().then((value) {
+      setState(() {
+        refresh = value;
       });
     });
     ReadBusStopData().then((value) {
@@ -589,7 +647,6 @@ class _MyAppState extends State<MyApp> {
     ]);
   }
 
-
   // @override
   // void dispose(){
   //   super.dispose();
@@ -603,54 +660,152 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  refreshintervals(int interval) {
+    refresh = interval;
+    setRefreshOption(interval);
+  }
+
+  isNotificationDisabled(bool checknotif) {
+    setNotifsOption(checknotif);
+    _isNotificationDisabled = checknotif;
+  }
+
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        home: bslist.isEmpty && _screens.isEmpty
-            ? Center(
-                child: Stack(
-                  alignment: Alignment.center,
+      home: bslist.isEmpty && _screens.isEmpty
+          ? Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SpinKitDualRing(
+                    color: Colors.blue,
+                    size: 80,
+                    lineWidth: 4,
+                  ),
+                  Image.asset(
+                    'jsonfile/Moovita1.png', // Replace with your logo asset path
+                    width: 60,
+                    height: 60,
+                  ),
+                ],
+              ),
+            )
+          : Scaffold(
+              key: _scaffoldKey,
+              body: _screens[_currentIndex],
+              bottomNavigationBar: BottomNavigationBar(
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                selectedItemColor: background,
+                unselectedItemColor: background.withOpacity(0.6),
+                backgroundColor: Color(0xFF671919),
+                items: [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.directions_bus),
+                    label: 'Bus',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.favorite),
+                    label: 'Favorite',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.map),
+                    label: 'Route',
+                  ),
+                ],
+              ),
+              drawer: Drawer(
+                backgroundColor: background,
+                child: ListView(
+                  padding: EdgeInsets.zero,
                   children: [
-                    SpinKitDualRing(
-                      color: Colors.blue,
-                      size: 80,
-                      lineWidth: 4,
+                    DrawerHeader(
+                      decoration: BoxDecoration(color: Color(0xFF671919)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Image.asset(
+                            'jsonfile/Moovita1.png',
+                            // Replace with your logo image path
+                            width: 80,
+                            height: 80,
+                          ),
+                          Text(
+                            'Moovita\nMenu',
+                            style: TextStyle(
+                              color: primary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Image.asset(
-                      'jsonfile/Moovita1.png', // Replace with your logo asset path
-                      width: 60,
-                      height: 60,
+                    Builder(builder: (context) {
+                      return ListTile(
+                        leading: Icon(
+                          Icons.settings,
+                          color: primary,
+                        ),
+                        title: Text(
+                          'Settings',
+                          style: TextStyle(color: primary),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SettingsPage(
+                                  style: style,
+                                      isNotificationDisabled:
+                                          isNotificationDisabled,
+                                      refreshtime: refreshintervals,
+                                      refresh: refresh,
+                                      isNotifDisabled: _isNotificationDisabled,
+                                    )),
+                          );
+                        },
+                      );
+                    }),
+                    Builder(builder: (context) {
+                      return ListTile(
+                        leading: Icon(
+                          Icons.assignment,
+                          color: primary,
+                        ),
+                        title: Text('Survey', style: TextStyle(color: primary)),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SurveyPage()),
+                          );
+                        },
+                      );
+                    }),
+                    ListTile(
+                      leading: Icon(
+                        Icons.brightness_4,
+                        color: primary,
+                      ),
+                      title:
+                          Text('Dark Mode', style: TextStyle(color: primary)),
+                      onTap: () {
+                        setstyle();
+                      },
                     ),
                   ],
                 ),
-              )
-            : Scaffold(
-                body: _screens[_currentIndex],
-                bottomNavigationBar: BottomNavigationBar(
-                  currentIndex: _currentIndex,
-                  onTap: (index) {
-                    setState(() {
-                      _currentIndex = index;
-                    });
-                  },
-                  selectedItemColor: background,
-                  unselectedItemColor: background.withOpacity(0.6),
-                  backgroundColor: Color(0xFF671919),
-                  items: [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.directions_bus),
-                      label: 'Bus',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.favorite),
-                      label: 'Favorite',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.map),
-                      label: 'Route',
-                    ),
-                  ],
-                ),
-              ));
+              ),
+            ),
+    );
   }
 }

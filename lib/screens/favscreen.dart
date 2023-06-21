@@ -6,6 +6,7 @@ import 'package:moovitainfo/services/busstopclass.dart';
 import 'package:moovitainfo/services/notif.dart';
 
 class FavScreen extends StatefulWidget {
+  GlobalKey<ScaffoldState> scaffoldkey;
   String darkStyle;
   LatLng curpos;
   List<BusStopClass> bslist;
@@ -20,6 +21,7 @@ class FavScreen extends StatefulWidget {
 
   FavScreen(
       {Key? key,
+        required this.scaffoldkey,
       required this.busstatus,
       required this.setstyle,
       required this.style,
@@ -38,6 +40,7 @@ class FavScreen extends StatefulWidget {
 }
 
 class _FavScreenState extends State<FavScreen> {
+  late GlobalKey<ScaffoldState> _scaffoldKey = widget.scaffoldkey;
   late String darkStyle = widget.darkStyle;
   late GoogleMapController mapController;
   late BitmapDescriptor markerbitmap = widget.markerbitmap;
@@ -260,7 +263,9 @@ class _FavScreenState extends State<FavScreen> {
                     top: 30,
                     left: 10,
                     child: InkWell(
-                      onTap: widget.setstyle,
+                      onTap: (){
+                        _scaffoldKey.currentState?.openDrawer();
+                      },
                       child: Container(
                         decoration: BoxDecoration(
                           color: background,
@@ -299,8 +304,9 @@ class _FavScreenState extends State<FavScreen> {
     return Theme(
       data: style ? ThemeData.dark() : ThemeData.light(),
       child: InkWell(
-          onTap: () {
-            busstop = bslist[index];
+          onTap: (){
+            mapController.animateCamera(CameraUpdate.newLatLngZoom(
+                curpos, 16));
           },
           child: ExpansionTile(
             collapsedBackgroundColor: background,
@@ -392,7 +398,6 @@ class _FavScreenState extends State<FavScreen> {
               // Handle the onExpansionChanged event here
               if (isExpanded) {
                 busstop = bslist[index];
-                print(busstop.name);
                 mapController.animateCamera(CameraUpdate.newLatLngZoom(
                     LatLng(busstop.lat, busstop.lng), 16));
               }

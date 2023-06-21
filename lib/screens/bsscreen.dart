@@ -20,10 +20,12 @@ class BSScreen extends StatefulWidget {
   Function(BusStopClass) addtoFavorites;
   Function(BusStopClass) removeFromFavorites;
   final VoidCallback setstyle;
+  GlobalKey<ScaffoldState> scaffoldkey;
 
   BSScreen(
       {Key? key,
-        required this.busstatus,
+      required this.scaffoldkey,
+      required this.busstatus,
       required this.setstyle,
       required this.style,
       required this.darkStyle,
@@ -56,6 +58,7 @@ class _BSScreenState extends State<BSScreen> {
   late Color background;
   late Color primary;
   late Color busstatus;
+  late GlobalKey<ScaffoldState> _scaffoldKey = widget.scaffoldkey;
   int currentETA = 0;
   Set<Marker> markers = new Set();
 
@@ -131,7 +134,7 @@ class _BSScreenState extends State<BSScreen> {
   }
 
   @override
-  void dispose(){
+  void dispose() {
     super.dispose();
     updatetimer.cancel();
   }
@@ -173,8 +176,8 @@ class _BSScreenState extends State<BSScreen> {
       etaa = widget.ETA;
       style = widget.style;
       mapController.setMapStyle(mapstyle());
-      background = style == false ? Colors.white: Colors.black;
-      primary = style == true ? Colors.white: Colors.black;
+      background = style == false ? Colors.white : Colors.black;
+      primary = style == true ? Colors.white : Colors.black;
     });
   }
 
@@ -186,8 +189,8 @@ class _BSScreenState extends State<BSScreen> {
       currentbusindex = widget.currentbusindex;
       etaa = widget.ETA;
       style = widget.style;
-      background = style == false ? Colors.white: Colors.black;
-      primary = style == true ? Colors.white: Colors.black;
+      background = style == false ? Colors.white : Colors.black;
+      primary = style == true ? Colors.white : Colors.black;
     });
   }
 
@@ -241,7 +244,9 @@ class _BSScreenState extends State<BSScreen> {
                           child: Text(
                             "${busstop.name}",
                             style: TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold, color: primary),
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: primary),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -253,7 +258,9 @@ class _BSScreenState extends State<BSScreen> {
                     left: 10,
                     child: SafeArea(
                       child: InkWell(
-                        onTap: widget.setstyle,
+                        onTap: () {
+                          _scaffoldKey.currentState?.openDrawer();
+                        },
                         child: Container(
                           decoration: BoxDecoration(
                             color: background,
@@ -288,104 +295,111 @@ class _BSScreenState extends State<BSScreen> {
 
   _listitems(index) {
     return Theme(
-      data: style? ThemeData.dark() : ThemeData.light(),
-      child: ExpansionTile(
-        collapsedBackgroundColor: background,
-        // Set the background color of the collapsed tile
-        backgroundColor: background,
-        // Set the background color of the expanded tile
-        title: Row(
-          children: [
-            Text(
-              bslist[index].name.toString(),
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.favorite,
-                color: bslist[index].isFavorite ? Colors.red : Colors.grey,
-              ),
-              onPressed: () {
-                setState(() {
-                  bslist[index].isFavorite = !bslist[index].isFavorite;
-                  if (bslist[index].isFavorite == true) {
-                    widget.addtoFavorites(bslist[index]);
-                  } else if (bslist[index].isFavorite == false) {
-                    widget.removeFromFavorites(bslist[index]);
-                  }
-                });
-              },
-            ),
-          ],
-        ),
-        subtitle: Row(
-          children: [
-            Text(
-              bslist[index].code.toString(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(width: 10),
-            Text(
-              bslist[index].road.toString(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        children: [
-          Card(
-            child: Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: busstatus,
-                  ),
+      data: style ? ThemeData.dark() : ThemeData.light(),
+      child: InkWell(
+        onTap: (){
+          mapController.animateCamera(CameraUpdate.newLatLngZoom(
+              curpos, 16));
+        },
+        child: ExpansionTile(
+          collapsedBackgroundColor: background,
+          // Set the background color of the collapsed tile
+          backgroundColor: background,
+          // Set the background color of the expanded tile
+          title: Row(
+            children: [
+              Text(
+                bslist[index].name.toString(),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      'ETA: ${status(int.parse(bslist[index].code))}',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.favorite,
+                  color: bslist[index].isFavorite ? Colors.red : Colors.grey,
+                ),
+                onPressed: () {
+                  setState(() {
+                    bslist[index].isFavorite = !bslist[index].isFavorite;
+                    if (bslist[index].isFavorite == true) {
+                      widget.addtoFavorites(bslist[index]);
+                    } else if (bslist[index].isFavorite == false) {
+                      widget.removeFromFavorites(bslist[index]);
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+          subtitle: Row(
+            children: [
+              Text(
+                bslist[index].code.toString(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(width: 10),
+              Text(
+                bslist[index].road.toString(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          children: [
+            Card(
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: busstatus,
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.notifications,
-                    color: bslist[index].isAlert ? Colors.red : Colors.grey,
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'ETA: ${status(int.parse(bslist[index].code))}',
+                        style:
+                            TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      bslist[index].isAlert = !bslist[index].isAlert;
-                      if (bslist[index].isAlert == true) {
-                        startTimer(index);
-                      } else {
-                        indextimer.cancel();
-                      }
-                    });
-                  },
-                ),
-              ],
-            ),
-          )
-        ],
-        onExpansionChanged: (isExpanded) {
-          // Handle the onExpansionChanged event here
-          if (isExpanded) {
-            busstop = bslist[index];
-            mapController.animateCamera(
-                CameraUpdate.newLatLngZoom(LatLng(busstop.lat, busstop.lng), 16));
-          }
-        },
+                  IconButton(
+                    icon: Icon(
+                      Icons.notifications,
+                      color: bslist[index].isAlert ? Colors.red : Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        bslist[index].isAlert = !bslist[index].isAlert;
+                        if (bslist[index].isAlert == true) {
+                          startTimer(index);
+                        } else {
+                          indextimer.cancel();
+                        }
+                      });
+                    },
+                  ),
+                ],
+              ),
+            )
+          ],
+          onExpansionChanged: (isExpanded) {
+            // Handle the onExpansionChanged event here
+            if (isExpanded) {
+              busstop = bslist[index];
+              mapController.animateCamera(CameraUpdate.newLatLngZoom(
+                  LatLng(busstop.lat, busstop.lng), 16));
+            }
+          },
+        ),
       ),
     );
   }
