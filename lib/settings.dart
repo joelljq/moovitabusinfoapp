@@ -94,27 +94,19 @@ class _SettingsPageState extends State<SettingsPage> {
                 },
               ),
               SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: primary,
-                    width: 2.0,
-                  ),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Handle button press
-                    Navigator.pop(context);
+              ElevatedButton(
+                onPressed: () {
+                  // Handle button press
+                  Navigator.pop(context);
 
-                  },
-                  child: Text('Return to Home'),
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(background),
-                    foregroundColor: MaterialStateProperty.all(primary),
-                  ),
+                },
+                child: Text('Return to Home'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: background,
+                  foregroundColor: primary,
+                  side: BorderSide(color: primary),
                 ),
-              )
+              ),
             ],
           ),
         ),

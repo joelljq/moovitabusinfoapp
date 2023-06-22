@@ -2,11 +2,11 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
   final FlutterLocalNotificationsPlugin notificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
   Future<void> initNotification() async {
     AndroidInitializationSettings initializationSettingsAndroid =
-        const AndroidInitializationSettings('moovita1');
+    const AndroidInitializationSettings('moovita1');
 
     var initializationSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -28,18 +28,16 @@ class NotificationService {
     );
   }
 
-  NotificationDetails notificationDetails(
-      {bool isSilent = false,
-      bool enableSound = true,
-      bool disableNotifications = false}) {
+  NotificationDetails notificationDetails({
+    bool isSilent = false,
+    bool enableSound = true,
+  }) {
     final androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'channelId',
       'channelName',
       channelDescription: 'channelDescription',
-      importance: disableNotifications
-          ? Importance.none
-          : (isSilent ? Importance.min : Importance.max),
-      priority: disableNotifications ? Priority.defaultPriority : (isSilent ? Priority.low : Priority.high),
+      importance: isSilent ? Importance.min : Importance.max,
+      priority: isSilent ? Priority.low : Priority.high,
       playSound: !isSilent && enableSound,
       enableVibration: !isSilent,
     );
@@ -54,7 +52,6 @@ class NotificationService {
     String? payload,
     bool isSilent = false,
     bool enableSound = true,
-    bool disableNotifications = false,
   }) async {
     final appLifecycleState = await notificationsPlugin
         .getNotificationAppLaunchDetails()
@@ -67,7 +64,7 @@ class NotificationService {
     }
 
     final platformChannelSpecifics =
-        notificationDetails(isSilent: isSilent, enableSound: enableSound, disableNotifications: disableNotifications);
+    notificationDetails(isSilent: isSilent, enableSound: enableSound);
 
     await notificationsPlugin.show(
       id,

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/scheduler.dart';
 import 'package:moovitainfo/settings.dart';
 import 'package:moovitainfo/survey.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +20,11 @@ import 'package:moovitainfo/screens/routescreen.dart';
 import 'package:moovitainfo/services/busstopclass.dart';
 import 'package:moovitainfo/services/currentlocationclass.dart';
 import 'package:moovitainfo/services/notif.dart';
+import 'package:is_first_run/is_first_run.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:typed_data/src/typed_buffer.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +32,7 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(BusStopClassAdapter());
   await Hive.openBox<BusStopClass>('favorites');
+
   runApp(MyApp());
 }
 
@@ -112,6 +119,8 @@ class _MyAppState extends State<MyApp> {
   late Color primary;
   int refresh = 5;
   bool _isNotificationDisabled = false;
+
+  final client = MqttServerClient('test.mosquitto.org', '1883');
 
   Future<void> saveStyleOption(bool value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -390,6 +399,25 @@ class _MyAppState extends State<MyApp> {
     return timechecked;
   }
 
+  void _sendMessage (String busstop, String status) async {
+    await client.connect();
+    if (client.connectionStatus?.state == MqttConnectionState.connected) {
+      String topicname = '/bsstatus/${busstop}';
+      print("Success, ${topicname}");
+      Map<String, dynamic> jsonMessage = {
+        'id': 600,
+        'Status': '${status}',
+      };
+      String messageString = jsonEncode(jsonMessage);
+      client.publishMessage(
+        topicname,
+        MqttQos.atLeastOnce,
+        Uint8Buffer()..addAll(messageString.codeUnits),
+      );
+      client.disconnect();
+    }
+  }
+
   getcurrentbusindex(int ETA) {
     setState(() {
       if (ETA > 0) {
@@ -526,6 +554,28 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  initStyle() async {
+    bool firstRun = await IsFirstRun.isFirstRun();
+    if (firstRun == true){
+      var brightness = SchedulerBinding.instance.platformDispatcher.platformBrightness;
+      bool isDarkMode = brightness == Brightness.dark;
+      style = isDarkMode;
+      saveStyleOption(style);
+      background = style == false ? Colors.white : Colors.black;
+      primary = style == true ? Colors.white : Colors.black;
+    }
+    else{
+      getStyleOption().then((value) {
+        setState(() {
+          style = value;
+          background = style == false ? Colors.white : Colors.black;
+          primary = style == true ? Colors.white : Colors.black;
+        });
+      });
+    }
+
+  }
+
   int _currentIndex = 0;
   late Timer timer;
   late Timer bstimer;
@@ -541,6 +591,8 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _screens = [
         BSScreen(
+          sendMessage: _sendMessage,
+          isNotifsDisabled: _isNotificationDisabled,
           scaffoldkey: _scaffoldKey,
           busstatus: hcstatus(HC),
           setstyle: setstyle,
@@ -601,14 +653,7 @@ class _MyAppState extends State<MyApp> {
     getCurrentETA();
     getHeadCount();
     updatescreen();
-
-    getStyleOption().then((value) {
-      setState(() {
-        style = value;
-        background = style == false ? Colors.white : Colors.black;
-        primary = style == true ? Colors.white : Colors.black;
-      });
-    });
+    initStyle();
     getNotifsOption().then((value) {
       setState(() {
         _isNotificationDisabled = value;
