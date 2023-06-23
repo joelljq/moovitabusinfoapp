@@ -21,7 +21,9 @@ class BottomSheetWidget extends StatefulWidget {
   _BottomSheetWidgetState createState() => _BottomSheetWidgetState();
 }
 
-class _BottomSheetWidgetState extends State<BottomSheetWidget> {
+class _BottomSheetWidgetState extends State<BottomSheetWidget>{
+  ScrollController _scrollController = ScrollController();
+  double _scrollPosition = 0.0;
   int fromindex = 0;
   int toindex = 0;
   int mybs = 0;
@@ -32,6 +34,7 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
   late bool style = widget.style;
   late Color background;
   late Color primary;
+  bool _isExpanded = false;
   List<String> bstoplist = [
     'King Albert Park',
     'Main Entrance',
@@ -45,6 +48,44 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
     'LSCT',
     'Blk 72'
   ];
+
+  List<String> getMiddleBusStops(int fromIndex, int toIndex) {
+    // Replace with your logic to generate the middle bus stops
+    List<String> busStops = [
+      'King Albert Park',
+      'Main Entrance',
+      'Blk 23',
+      'Sports Hall',
+      'SIT',
+      'Blk 44',
+      'Blk 37',
+      'Makan Place',
+      'Health Science',
+      'LSCT',
+      'Blk 72'
+    ];
+
+    // Find the indices of the fromBusStop and toBusStop
+
+    // Handle the case where fromBusStop or toBusStop is not found in the list
+    if (fromIndex == -1 || toIndex == -1) {
+      return [];
+    }
+
+    // Determine the start and end indices for the middle bus stops
+    int startIndex = fromIndex + 1;
+    int endIndex = toIndex - 1;
+
+    // Handle the case where the start and end indices are out of range
+    if (startIndex >= endIndex) {
+      return [];
+    }
+
+    // Extract the middle bus stops from the original list
+    List<String> middleBusStops = busStops.sublist(startIndex, endIndex + 1);
+
+    return middleBusStops;
+  }
 
   getBusStatus() {
     fromindex = int.parse(widget.string1);
@@ -92,6 +133,37 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
     background = style == false ? Colors.white : Colors.black;
     primary = style == true ? Colors.white : Colors.black;
   }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void didUpdateWidget(BottomSheetWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      _scrollController.jumpTo(_scrollPosition);
+    });
+  }
+
+  void _scrollListener() {
+    _scrollPosition = _scrollController.position.pixels;
+  }
+
+  void _toggleExpansion() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -160,53 +232,33 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
       ),
       child: Padding(
         padding: EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: background,
-                borderRadius: BorderRadius.circular(20.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("From",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[600])),
-                              SizedBox.fromSize(
-                                size: Size.fromHeight(40.0),
-                                child: Text(
-                                  bstoplist[fromindex - 1],
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 20,
-                                      color: primary),
-                                ),
-                              ),
-                              // add other widget as child of column
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          Align(
-                            child: Column(
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          child: Column(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: background,
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text("To",
+                                Text("From",
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.grey[600])),
                                 SizedBox.fromSize(
                                   size: Size.fromHeight(40.0),
                                   child: Text(
-                                    bstoplist[toindex - 1],
+                                    bstoplist[fromindex - 1],
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 20,
@@ -216,43 +268,134 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
                                 // add other widget as child of column
                               ],
                             ),
-                          ),
-                        ],
+                            SizedBox(height: 10),
+                            Align(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("To",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey[600])),
+                                  SizedBox.fromSize(
+                                    size: Size.fromHeight(40.0),
+                                    child: Text(
+                                      bstoplist[toindex - 1],
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                          color: primary),
+                                    ),
+                                  ),
+                                  // add other widget as child of column
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Container(
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10), color: background),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: background,
+                ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "${departure} - ${arrival}",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 30,
-                          color: primary),
+                    // ListTile(
+                    //   leading: Icon(Icons.my_location),
+                    //   title: Text("From Bus Stop"),
+                    // ),
+                    // ListTile(
+                    //   leading: Icon(Icons.location_on),
+                    //   title: Text("To Bus Stop"),
+                    // ),
+                    ListTile(
+                      title: Text("Route", style: TextStyle(fontWeight: FontWeight.bold, color: primary),),
                     ),
-                    Text(
-                      "${duration.toString()} Mins Duration",
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: primary),
-                    )
+                    ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.green,
+                        child: Icon(Icons.directions_bus, color: primary,),
+                      ),
+                      title: Text("${bstoplist[fromindex]}", style: TextStyle(fontWeight: FontWeight.bold, color: primary)),
+                      trailing: Text(departure, style: TextStyle(fontWeight: FontWeight.bold, color: primary)),
+                    ),
+                    ExpansionTile(
+                      leading: VerticalDivider(
+                        thickness: 10,
+                        width: 30,
+                        color: Colors.green,
+                      ),
+                      title: Text(
+                        "${getMiddleBusStops(fromindex, toindex).length.toString()} Bus Stops",
+                        style: TextStyle(fontWeight: FontWeight.bold, color: primary),
+                      ),
+                      maintainState: true, // Maintain the expansion state
+                      children: [
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: getMiddleBusStops(fromindex, toindex).length,
+                          itemBuilder: (context, index) => ListTile(
+                            leading: VerticalDivider(
+                              thickness: 10,
+                              width: 30,
+                              color: Colors.green,
+                            ),
+                            title: Text(
+                              getMiddleBusStops(fromindex, toindex)[index],
+                              style: TextStyle(color: primary),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.green,
+                        child: Icon(Icons.location_on, color: primary,),
+                      ),
+                      title: Text("${bstoplist[toindex]}", style: TextStyle(fontWeight: FontWeight.bold, color: primary)),
+                      trailing: Text(arrival, style: TextStyle(fontWeight: FontWeight.bold, color: primary)),
+                    ),
                   ],
                 ),
               ),
-            )
-          ],
+
+              // Container(
+              //   decoration: BoxDecoration(
+              //       borderRadius: BorderRadius.circular(10), color: background),
+              //   child: Padding(
+              //     padding: const EdgeInsets.all(8.0),
+              //     child: Column(
+              //       children: [
+              //         Text(
+              //           "${departure} - ${arrival}",
+              //           style: TextStyle(
+              //               fontWeight: FontWeight.bold,
+              //               fontSize: 30,
+              //               color: primary),
+              //         ),
+              //         Text(
+              //           "${duration.toString()} Mins Duration",
+              //           style: TextStyle(
+              //               fontSize: 20,
+              //               fontWeight: FontWeight.bold,
+              //               color: primary),
+              //         )
+              //       ],
+              //     ),
+              //   ),
+              // )
+            ],
+          ),
         ),
       ),
     );

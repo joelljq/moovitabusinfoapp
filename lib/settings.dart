@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
 class SettingsPage extends StatefulWidget {
-  final Function(bool) isNotificationDisabled;
+  final Function(int) screenOption;
   final Function(int) refreshtime;
   final int refresh;
-  final bool isNotifDisabled;
   final bool style;
+  final int selectedindex;
 
   SettingsPage(
       {Key? key,
-      required this.isNotificationDisabled,
+        required this.selectedindex,
+      required this.screenOption,
       required this.refreshtime,
       required this.refresh,
-      required this.isNotifDisabled,
       required this.style})
       : super(key: key);
 
@@ -23,8 +23,11 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   int _refreshInterval = 5; // Default refresh interval in seconds
   bool _disableNotifications = false;
+  late int selectedindex = widget.selectedindex;
   late Color background;
   late Color primary;
+  late String _selectedOption;
+  List<String> _options = ['Bus Stops', 'Favourites', 'Route'];
 
   style(bool style) {
     if (style == true) {
@@ -42,7 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     style(widget.style);
     _refreshInterval = widget.refresh;
-    _disableNotifications = widget.isNotifDisabled;
+    _selectedOption = _options[selectedindex];
   }
 
   @override
@@ -74,25 +77,57 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
               SizedBox(height: 16),
-              Text(
-                'Disable Notifications',
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold, color: primary),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Preferred Option:',
+                    style: TextStyle(fontSize: 18, color: primary, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: background,
+                    ),
+                    child: DropdownButton<String>(
+                      dropdownColor: background,
+                      value: _selectedOption,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedOption = newValue!;
+                          selectedindex = _options.indexWhere((option) => option == _selectedOption);
+                          widget.screenOption(selectedindex);
+                        });
+                      },
+                      items: _options.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value, style: TextStyle(color: primary)),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
               ),
-              SwitchListTile(
-                tileColor: background,
-                title: Text(
-                  'Disable Notifications',
-                  style: TextStyle(color: primary),
-                ),
-                value: _disableNotifications,
-                onChanged: (value) {
-                  setState(() {
-                    _disableNotifications = value;
-                    widget.isNotificationDisabled(value);
-                  });
-                },
-              ),
+              // Text(
+              //   'Disable Notifications',
+              //   style: TextStyle(
+              //       fontSize: 18, fontWeight: FontWeight.bold, color: primary),
+              // ),
+              // SwitchListTile(
+              //   tileColor: background,
+              //   title: Text(
+              //     'Disable Notifications',
+              //     style: TextStyle(color: primary),
+              //   ),
+              //   value: _disableNotifications,
+              //   onChanged: (value) {
+              //     setState(() {
+              //       _disableNotifications = value;
+              //       widget.isNotificationDisabled(value);
+              //     });
+              //   },
+              // ),
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {

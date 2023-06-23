@@ -177,11 +177,14 @@ class _RouteScreenState extends State<RouteScreen> {
                           color: background,
                           shape: BoxShape.circle,
                         ),
-                        child: Image.asset(
-                          'jsonfile/Moovita1.png',
-                          // Replace with your image path
-                          width: 40,
-                          height: 40,
+                        child: ClipOval(
+                          child: Image.asset(
+                            'jsonfile/moovita2.png',
+                            // Replace with your image path
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
@@ -222,9 +225,12 @@ class _RouteScreenState extends State<RouteScreen> {
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               color: Colors.grey[600])),
-                                      SizedBox.fromSize(
-                                        size: Size.fromHeight(40.0),
+                                      Container(
+                                        width: double.infinity,
+                                        height: 40,
+                                        color: background,
                                         child: DropdownButton<String>(
+                                          dropdownColor: background,
                                           value: _fromOption,
                                           items: bslist
                                               .map((busStop) =>
@@ -263,9 +269,12 @@ class _RouteScreenState extends State<RouteScreen> {
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.grey[600])),
-                                        SizedBox.fromSize(
-                                          size: Size.fromHeight(40.0),
+                                        Container(
+                                          width: double.infinity,
+                                          height: 40,
+                                          color: background,
                                           child: DropdownButton<String>(
+                                            dropdownColor: Colors.black,
                                             value: _toOption,
                                             items: bslist
                                                 .map((busStop) =>

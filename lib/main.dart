@@ -25,7 +25,6 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:typed_data/src/typed_buffer.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   NotificationService().initNotification();
@@ -118,9 +117,11 @@ class _MyAppState extends State<MyApp> {
   late Color background;
   late Color primary;
   int refresh = 5;
-  bool _isNotificationDisabled = false;
+  late int _screenIndex;
 
   final client = MqttServerClient('test.mosquitto.org', '1883');
+
+  final TextStyle customTextStyle = TextStyle(fontFamily: 'OpenSans');
 
   Future<void> saveStyleOption(bool value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -132,9 +133,9 @@ class _MyAppState extends State<MyApp> {
     return prefs.getBool('styleOption') ?? false;
   }
 
-  Future<bool> getNotifsOption() async {
+  Future<int> getScreenOption() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('notificationOption') ?? false;
+    return prefs.getInt('screenOption') ?? 0;
   }
 
   Future<int> getRefreshOption() async {
@@ -142,9 +143,9 @@ class _MyAppState extends State<MyApp> {
     return prefs.getInt('getRefreshOption') ?? 5;
   }
 
-  Future<void> setNotifsOption(bool value) async {
+  Future<void> setScreenOption(int value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('notificationOption', value);
+    await prefs.setInt('screenOption', value);
   }
 
   Future<void> setRefreshOption(int value) async {
@@ -399,11 +400,11 @@ class _MyAppState extends State<MyApp> {
     return timechecked;
   }
 
-  void _sendMessage (String busstop, String status) async {
+  void _sendMessage(String busstop, String status) async {
     await client.connect();
     if (client.connectionStatus?.state == MqttConnectionState.connected) {
       String topicname = '/bsstatus/${busstop}';
-      print("Success, ${topicname}");
+      // print("Success, ${topicname}");
       Map<String, dynamic> jsonMessage = {
         'id': 600,
         'Status': '${status}',
@@ -556,15 +557,15 @@ class _MyAppState extends State<MyApp> {
 
   initStyle() async {
     bool firstRun = await IsFirstRun.isFirstRun();
-    if (firstRun == true){
-      var brightness = SchedulerBinding.instance.platformDispatcher.platformBrightness;
+    if (firstRun == true) {
+      var brightness =
+          SchedulerBinding.instance.platformDispatcher.platformBrightness;
       bool isDarkMode = brightness == Brightness.dark;
       style = isDarkMode;
       saveStyleOption(style);
       background = style == false ? Colors.white : Colors.black;
       primary = style == true ? Colors.white : Colors.black;
-    }
-    else{
+    } else {
       getStyleOption().then((value) {
         setState(() {
           style = value;
@@ -573,7 +574,6 @@ class _MyAppState extends State<MyApp> {
         });
       });
     }
-
   }
 
   int _currentIndex = 0;
@@ -591,8 +591,9 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _screens = [
         BSScreen(
+          cancelNotif: cancelnotif,
+          startNotif: startTimer,
           sendMessage: _sendMessage,
-          isNotifsDisabled: _isNotificationDisabled,
           scaffoldkey: _scaffoldKey,
           busstatus: hcstatus(HC),
           setstyle: setstyle,
@@ -609,6 +610,9 @@ class _MyAppState extends State<MyApp> {
           removeFromFavorites: removeFromFavorites,
         ),
         FavScreen(
+          cancelNotif: cancelnotif,
+          startNotif: startTimer,
+          sendMessage: _sendMessage,
           scaffoldkey: _scaffoldKey,
           busstatus: hcstatus(HC),
           setstyle: setstyle,
@@ -646,6 +650,83 @@ class _MyAppState extends State<MyApp> {
     updatescreen();
   }
 
+  List<Timer> timers = List<Timer>.filled(11, Timer(Duration.zero, () {}));
+
+  void startTimer(String code) {
+    int index = bslist.indexWhere((bs) => bs.code == code);
+    int favindex = favoritesList.indexWhere((fbs) => fbs.code == code);
+    bslist[index].isAlert = true;
+    favoritesList[favindex].isAlert = true;
+    List<int> newETAList = List<int>.filled(11, 0);
+    List<int> currentETAList = List<int>.filled(11, 0);
+    timers[index] = Timer.periodic(Duration(seconds: 1), (_) {
+      newETAList[index] = indexeta(int.parse(bslist[index].code));
+      if (newETAList[index] != currentETAList[index]) {
+        currentETAList[index] = newETAList[index];
+        if (currentETAList[index] == 0) {
+          NotificationService().showNotification(
+            title: "Bus Alert System",
+            body: "Bus has arrived at ${bslist[index].name}!",
+            enableSound: true,
+            isSilent: false,
+          );
+          bslist[index].isAlert = false;
+          favoritesList[favindex].isAlert = false;
+          timers[index].cancel();
+        } else {
+          NotificationService().showNotification(
+            title: "Bus Alert System",
+            body:
+                "Bus is arriving at ${bslist[index].name} in ${currentETAList[index]}min",
+            enableSound: false,
+            isSilent: true,
+          );
+        }
+      } else {
+        if (newETAList[index] == 0) {
+          NotificationService().showNotification(
+            title: "Bus Alert System",
+            body: "Bus has arrived at ${bslist[index].name}!",
+            enableSound: true,
+            isSilent: false,
+          );
+          bslist[index].isAlert = false;
+          favoritesList[favindex].isAlert = false;
+          timers[index].cancel();
+        }
+      }
+    });
+  }
+
+  cancelnotif(String code) {
+    int index = bslist.indexWhere((bs) => bs.code == code);
+    int favindex = favoritesList.indexWhere((fbs) => fbs.code == code);
+    bslist[index].isAlert = false;
+    favoritesList[favindex].isAlert = false;
+    timers[index].cancel();
+  }
+
+  int indexeta(int currentcode) {
+    int index = 0;
+    int diff = 0;
+    index = currentcode;
+    diff = index - currentbsindex;
+    etaa = cureta;
+    if (diff > 1) {
+      etaa = etaa + (3 * diff);
+    } else if (diff < 0) {
+      etaa = etaa + (3 * (11 + diff));
+    } else if (diff == 0) {
+      if (etaa > 0) {
+      } else {
+        etaa = 0;
+      }
+    } else if (diff == 1) {
+      etaa = etaa + 3;
+    }
+    return etaa;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -654,14 +735,9 @@ class _MyAppState extends State<MyApp> {
     getHeadCount();
     updatescreen();
     initStyle();
-    getNotifsOption().then((value) {
+    getScreenOption().then((value) {
       setState(() {
-        _isNotificationDisabled = value;
-      });
-    });
-    getNotifsOption().then((value) {
-      setState(() {
-        _isNotificationDisabled = value;
+        _screenIndex = value;
       });
     });
     getRefreshOption().then((value) {
@@ -710,9 +786,9 @@ class _MyAppState extends State<MyApp> {
     setRefreshOption(interval);
   }
 
-  isNotificationDisabled(bool checknotif) {
-    setNotifsOption(checknotif);
-    _isNotificationDisabled = checknotif;
+  screenOption(int selectedoption) {
+    setScreenOption(selectedoption);
+    _screenIndex = selectedoption;
   }
 
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -720,13 +796,16 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+          textTheme: TextTheme(
+              bodyLarge: customTextStyle, bodyMedium: customTextStyle)),
       home: bslist.isEmpty && _screens.isEmpty
           ? Center(
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   SpinKitDualRing(
-                    color: Colors.blue,
+                    color: Color(0xFF671919),
                     size: 80,
                     lineWidth: 4,
                   ),
@@ -739,32 +818,53 @@ class _MyAppState extends State<MyApp> {
               ),
             )
           : Scaffold(
+              backgroundColor: background,
               key: _scaffoldKey,
-              body: _screens[_currentIndex],
+              body: _screens[_screenIndex],
               bottomNavigationBar: BottomNavigationBar(
-                currentIndex: _currentIndex,
+                currentIndex: _screenIndex,
                 onTap: (index) {
                   setState(() {
-                    _currentIndex = index;
+                    _screenIndex = index;
                   });
                 },
-                selectedItemColor: background,
-                unselectedItemColor: background.withOpacity(0.6),
+                selectedItemColor: primary,
+                unselectedItemColor: primary.withOpacity(0.6),
                 backgroundColor: Color(0xFF671919),
                 items: [
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.directions_bus),
-                    label: 'Bus',
+                    icon: IconTheme(
+                      data: IconThemeData(
+                        color: primary,
+                        size: 24.0,
+                      ),
+                      child: Icon(Icons.directions_bus_outlined),
+                    ),
+                    label: 'Bus Stops',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.favorite),
-                    label: 'Favorite',
+                    icon: IconTheme(
+                      data: IconThemeData(
+                        color: primary,
+                        size: 24.0,
+                      ),
+                      child: Icon(Icons.favorite_border),
+                    ),
+                    label: 'Favourite',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.map),
+                    icon: IconTheme(
+                      data: IconThemeData(
+                        color: primary,
+                        size: 24.0,
+                      ),
+                      child: Icon(Icons.map_outlined),
+                    ),
                     label: 'Route',
                   ),
                 ],
+                selectedLabelStyle: TextStyle(color: primary),
+                unselectedLabelStyle: TextStyle(color: primary.withOpacity(0.6)),
               ),
               drawer: Drawer(
                 backgroundColor: background,
@@ -803,18 +903,23 @@ class _MyAppState extends State<MyApp> {
                           'Settings',
                           style: TextStyle(color: primary),
                         ),
-                        onTap: () {
+                        onTap: () async {
+                          await getScreenOption().then((value) {
+                            setState(() {
+                              _screenIndex = value;
+                            });
+                          });
+                          print(_screenIndex);
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (context) => SettingsPage(
-                                  style: style,
-                                      isNotificationDisabled:
-                                          isNotificationDisabled,
+                                      style: style,
+                                      screenOption: screenOption,
+                                      selectedindex: _screenIndex,
                                       refreshtime: refreshintervals,
                                       refresh: refresh,
-                                      isNotifDisabled: _isNotificationDisabled,
                                     )),
                           );
                         },

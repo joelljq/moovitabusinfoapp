@@ -6,6 +6,9 @@ import 'package:moovitainfo/services/busstopclass.dart';
 import 'package:moovitainfo/services/notif.dart';
 
 class FavScreen extends StatefulWidget {
+  Function(String, String) sendMessage;
+  Function(String) startNotif;
+  Function(String) cancelNotif;
   GlobalKey<ScaffoldState> scaffoldkey;
   String darkStyle;
   LatLng curpos;
@@ -21,7 +24,10 @@ class FavScreen extends StatefulWidget {
 
   FavScreen(
       {Key? key,
-        required this.scaffoldkey,
+      required this.sendMessage,
+      required this.startNotif,
+      required this.cancelNotif,
+      required this.scaffoldkey,
       required this.busstatus,
       required this.setstyle,
       required this.style,
@@ -142,42 +148,42 @@ class _FavScreenState extends State<FavScreen> {
   }
 
   @override
-  void dispose(){
+  void dispose() {
     super.dispose();
     updatetimer.cancel();
   }
 
   late Timer indextimer;
 
-  void startTimer(int index) {
-    indextimer = Timer.periodic(Duration(seconds: 1), (_) {
-      // Fetch the current ETA for the selected bus stop
-      final newETA = indexeta(int.parse(bslist[index].code));
-      if (newETA != currentETA) {
-        currentETA = newETA;
-        if (currentETA == 0) {
-          // Trigger the alert when ETA reaches 0
-          indextimer.cancel();
-          NotificationService().showNotification(
-              title: "Bus Alert System",
-              body: "Bus has arrived at ${bslist[index].name}!",
-              enableSound: true); // Stop the timer after the alert
-          bslist[index].isAlert = false;
-        } else {
-          NotificationService().showNotification(
-              title: "Bus Alert System",
-              body:
-                  "Bus is arriving at ${bslist[index].name} in ${currentETA}min",
-              isSilent: true,
-              enableSound: false);
-        }
-      }
-    });
-  }
+  // void startTimer(int index) {
+  //   indextimer = Timer.periodic(Duration(seconds: 1), (_) {
+  //     // Fetch the current ETA for the selected bus stop
+  //     final newETA = indexeta(int.parse(bslist[index].code));
+  //     if (newETA != currentETA) {
+  //       currentETA = newETA;
+  //       if (currentETA == 0) {
+  //         // Trigger the alert when ETA reaches 0
+  //         indextimer.cancel();
+  //         NotificationService().showNotification(
+  //             title: "Bus Alert System",
+  //             body: "Bus has arrived at ${bslist[index].name}!",
+  //             enableSound: true); // Stop the timer after the alert
+  //         bslist[index].isAlert = false;
+  //       } else {
+  //         NotificationService().showNotification(
+  //             title: "Bus Alert System",
+  //             body:
+  //                 "Bus is arriving at ${bslist[index].name} in ${currentETA}min",
+  //             isSilent: true,
+  //             enableSound: false);
+  //       }
+  //     }
+  //   });
+  // }
 
   updatevalues() {
     setState(() {
-      print("FavScreen");
+      // print("FavScreen");
       curpos = widget.curpos;
       bslist = widget.bslist;
       currentbusindex = widget.currentbusindex;
@@ -206,11 +212,50 @@ class _FavScreenState extends State<FavScreen> {
   @override
   Widget build(BuildContext context) {
     return bslist.isEmpty
-        ? Center(
-            child: Text(
-            "You have yet to favourite any bus stops",
-            style: TextStyle(fontSize: 30),
-          ))
+        ? Stack(children: [
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'You have no favorite bus stops added yet',
+                  style: TextStyle(
+                    color: primary,
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 30,
+              left: 10,
+              child: SafeArea(
+                child: InkWell(
+                  onTap: () {
+                    _scaffoldKey.currentState?.openDrawer();
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: background,
+                      shape: BoxShape.circle,
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'jsonfile/moovita2.png', // Replace with your image path
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ])
         : Column(
             children: [
               Stack(
@@ -239,22 +284,24 @@ class _FavScreenState extends State<FavScreen> {
                     top: 30,
                     left: 100,
                     right: 100,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: background,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          "${busstop.name}",
-                          style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: primary),
-                          textAlign: TextAlign.center,
+                    child: SafeArea(
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: background,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6.0),
+                          child: Text(
+                            "${busstop.name}",
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: primary),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
                     ),
@@ -262,19 +309,21 @@ class _FavScreenState extends State<FavScreen> {
                   Positioned(
                     top: 30,
                     left: 10,
-                    child: InkWell(
-                      onTap: (){
-                        _scaffoldKey.currentState?.openDrawer();
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: background,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Image.asset(
-                          'jsonfile/Moovita1.png', // Replace with your image path
-                          width: 40,
-                          height: 40,
+                    child: SafeArea(
+                      child: InkWell(
+                        onTap: () {
+                          _scaffoldKey.currentState?.openDrawer();
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: background,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Image.asset(
+                            'jsonfile/moovita2.png', // Replace with your image path
+                            width: 40,
+                            height: 40,
+                          ),
                         ),
                       ),
                     ),
@@ -304,9 +353,8 @@ class _FavScreenState extends State<FavScreen> {
     return Theme(
       data: style ? ThemeData.dark() : ThemeData.light(),
       child: InkWell(
-          onTap: (){
-            mapController.animateCamera(CameraUpdate.newLatLngZoom(
-                curpos, 16));
+          onTap: () {
+            mapController.animateCamera(CameraUpdate.newLatLngZoom(curpos, 16));
           },
           child: ExpansionTile(
             collapsedBackgroundColor: background,
@@ -383,9 +431,11 @@ class _FavScreenState extends State<FavScreen> {
                         setState(() {
                           bslist[index].isAlert = !bslist[index].isAlert;
                           if (bslist[index].isAlert == true) {
-                            startTimer(index);
+                            widget.sendMessage(bslist[index].code, "Yes");
+                            widget.startNotif(bslist[index].code);
                           } else {
-                            indextimer.cancel();
+                            widget.sendMessage(bslist[index].code, "No");
+                            widget.cancelNotif(bslist[index].code);
                           }
                         });
                       },

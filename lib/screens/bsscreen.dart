@@ -8,7 +8,6 @@ import 'package:moovitainfo/services/notif.dart';
 
 class BSScreen extends StatefulWidget {
   Function(String, String) sendMessage;
-  bool isNotifsDisabled;
   bool style;
   String darkStyle;
   BusStopClass busstop;
@@ -22,12 +21,15 @@ class BSScreen extends StatefulWidget {
   Function(BusStopClass) addtoFavorites;
   Function(BusStopClass) removeFromFavorites;
   final VoidCallback setstyle;
+  Function(String) startNotif;
+  Function(String) cancelNotif;
   GlobalKey<ScaffoldState> scaffoldkey;
 
   BSScreen(
       {Key? key,
+        required this.startNotif,
+        required this.cancelNotif,
         required this.sendMessage,
-      required this.isNotifsDisabled,
       required this.scaffoldkey,
       required this.busstatus,
       required this.setstyle,
@@ -148,45 +150,45 @@ class _BSScreenState extends State<BSScreen> {
 
   List<Timer> timers = List<Timer>.filled(11, Timer(Duration.zero, () {}));
 
-  void startTimer(int index) {// Declare the timer variable outside the function
-    List<int> newETAList = List<int>.filled(11, 0);
-    List<int> currentETAList = List<int>.filled(11, 0);
-    timers[index] = Timer.periodic(Duration(seconds: 1), (_){
-      newETAList[index] = indexeta(int.parse(bslist[index].code));
-      if (newETAList[index] != currentETAList[index]) {
-        currentETAList[index] = newETAList[index];
-        if (currentETAList[index] == 0) {
-          NotificationService().showNotification(
-            title: "Bus Alert System",
-            body: "Bus has arrived at ${bslist[index].name}!",
-            enableSound: true,
-            isSilent: false,
-          );
-          bslist[index].isAlert = false;
-          timers[index].cancel();
-        } else {
-          NotificationService().showNotification(
-            title: "Bus Alert System",
-            body: "Bus is arriving at ${bslist[index].name} in ${currentETAList[index]}min",
-            enableSound: false,
-            isSilent: true,
-          );
-        }
-      }
-      else{
-        if (newETAList[index] == 0) {
-          NotificationService().showNotification(
-            title: "Bus Alert System",
-            body: "Bus has arrived at ${bslist[index].name}!",
-            enableSound: true,
-            isSilent: false,
-          );
-          bslist[index].isAlert = false;
-          timers[index].cancel();
-        }
-      }
-    });
-  }
+  // void startTimer(int index) {// Declare the timer variable outside the function
+  //   List<int> newETAList = List<int>.filled(11, 0);
+  //   List<int> currentETAList = List<int>.filled(11, 0);
+  //   timers[index] = Timer.periodic(Duration(seconds: 1), (_){
+  //     newETAList[index] = indexeta(int.parse(bslist[index].code));
+  //     if (newETAList[index] != currentETAList[index]) {
+  //       currentETAList[index] = newETAList[index];
+  //       if (currentETAList[index] == 0) {
+  //         NotificationService().showNotification(
+  //           title: "Bus Alert System",
+  //           body: "Bus has arrived at ${bslist[index].name}!",
+  //           enableSound: true,
+  //           isSilent: false,
+  //         );
+  //         bslist[index].isAlert = false;
+  //         timers[index].cancel();
+  //       } else {
+  //         NotificationService().showNotification(
+  //           title: "Bus Alert System",
+  //           body: "Bus is arriving at ${bslist[index].name} in ${currentETAList[index]}min",
+  //           enableSound: false,
+  //           isSilent: true,
+  //         );
+  //       }
+  //     }
+  //     else{
+  //       if (newETAList[index] == 0) {
+  //         NotificationService().showNotification(
+  //           title: "Bus Alert System",
+  //           body: "Bus has arrived at ${bslist[index].name}!",
+  //           enableSound: true,
+  //           isSilent: false,
+  //         );
+  //         bslist[index].isAlert = false;
+  //         timers[index].cancel();
+  //       }
+  //     }
+  //   });
+  // }
 
 
   updatevalues() {
@@ -262,7 +264,7 @@ class _BSScreenState extends State<BSScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(6.0),
                           child: Text(
                             "${busstop.name}",
                             style: TextStyle(
@@ -288,10 +290,13 @@ class _BSScreenState extends State<BSScreen> {
                             color: background,
                             shape: BoxShape.circle,
                           ),
-                          child: Image.asset(
-                            'jsonfile/Moovita1.png', // Replace with your image path
-                            width: 40,
-                            height: 40,
+                          child: ClipOval(
+                            child: Image.asset(
+                              'jsonfile/moovita2.png', // Replace with your image path
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),
@@ -407,9 +412,9 @@ class _BSScreenState extends State<BSScreen> {
                         }
                         bslist[index].isAlert = !bslist[index].isAlert;
                         if (bslist[index].isAlert == true) {
-                          startTimer(index);
+                          widget.startNotif(bslist[index].code);
                         } else {
-                          timers[index].cancel();
+                          widget.cancelNotif(bslist[index].code);
                         }
                       });
                     },
