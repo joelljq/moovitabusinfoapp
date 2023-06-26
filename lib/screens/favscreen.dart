@@ -319,10 +319,13 @@ class _FavScreenState extends State<FavScreen> {
                             color: background,
                             shape: BoxShape.circle,
                           ),
-                          child: Image.asset(
-                            'jsonfile/moovita2.png', // Replace with your image path
-                            width: 40,
-                            height: 40,
+                          child: ClipOval(
+                            child: Image.asset(
+                              'jsonfile/moovita2.png', // Replace with your image path
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),
