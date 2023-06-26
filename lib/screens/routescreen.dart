@@ -64,36 +64,27 @@ class _RouteScreenState extends State<RouteScreen> {
   late Color primary;
   late bool style;
 
-  _addPolyLine(List<LatLng> polylineCoordinates) {
-    PolylineId id = PolylineId("poly");
-    Polyline polyline = Polyline(
-      polylineId: id,
-      points: polylineCoordinates,
-      width: 6,
-      color: Colors.red,
+
+  void showCustomBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      backgroundColor: Colors.transparent,
+      context: context,
+      builder: (context) => Builder(
+          builder: (BuildContext context){
+            return BottomSheetWidget(
+              style: widget.style,
+              string1: bslist[_fselectedIndex].code,
+              string2: bslist[_tselectedIndex].code,
+              string3: (widget.ETA).toString(),
+              string4: (widget.currentbusindex).toString(),
+            );
+          }
+      ),
     );
-    polylines[id] = polyline;
-    setState(() {});
   }
 
-  void getPolyPoints() async {
-    print("Hello");
-    List<LatLng> polylineCoordinates = [];
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      'AIzaSyCPOOzOV-23KSBWcTYgw0Jo4WxQQTjoUBM',
-      PointLatLng(bslist[_fselectedIndex].lat, bslist[_fselectedIndex].lng),
-      PointLatLng(bslist[_tselectedIndex].lat, bslist[_tselectedIndex].lng),
-      travelMode: TravelMode.driving,
-    );
-    if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
-    } else {
-      print(result.errorMessage);
-    }
-    _addPolyLine(polylineCoordinates);
-  }
+
+
 
   late Timer updatetimer;
 
@@ -153,13 +144,13 @@ class _RouteScreenState extends State<RouteScreen> {
                 children: [
                   Container(
                     color: background,
-                    alignment: Alignment.center,
+                    alignment: Alignment.bottomLeft,
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         "Where do you want \n to go today?",
                         style: TextStyle(
-                            fontSize: 40,
+                            fontSize: 30,
                             fontWeight: FontWeight.bold,
                             color: primary),
                       ),
@@ -274,7 +265,7 @@ class _RouteScreenState extends State<RouteScreen> {
                                           height: 40,
                                           color: background,
                                           child: DropdownButton<String>(
-                                            dropdownColor: Colors.black,
+                                            dropdownColor: background,
                                             value: _toOption,
                                             items: bslist
                                                 .map((busStop) =>
@@ -363,26 +354,7 @@ class _RouteScreenState extends State<RouteScreen> {
                               ),
                             );
                           } else {
-                            setState(() {
-                              showModalBottomSheet(
-                                backgroundColor: Colors.transparent,
-                                context: context,
-                                builder: (context) => BottomSheetWidget(
-                                  key: UniqueKey(),
-                                  style: style,
-                                  string1: bslist[_fselectedIndex].code,
-                                  string2: bslist[_tselectedIndex].code,
-                                  string3: (widget.ETA).toString(),
-                                  string4: (currentbusindex).toString(),
-                                ),
-                              );
-                              // getPolyPoints();
-                              // mapController.animateCamera(
-                              //     CameraUpdate.newLatLngZoom(
-                              //         LatLng(bslist[_fselectedIndex].lat,
-                              //             bslist[_fselectedIndex].lng),
-                              //         16));
-                            });
+                            showCustomBottomSheet(context);
                           }
                         },
                         child: Text("Enter Search", style: TextStyle(color: background),),

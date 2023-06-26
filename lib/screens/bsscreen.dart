@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:moovitainfo/services/busstopclass.dart';
-import 'package:moovitainfo/services/notif.dart';
 
 class BSScreen extends StatefulWidget {
   Function(String, String) sendMessage;
@@ -149,46 +148,6 @@ class _BSScreenState extends State<BSScreen> {
   late Timer indextimer;
 
   List<Timer> timers = List<Timer>.filled(11, Timer(Duration.zero, () {}));
-
-  // void startTimer(int index) {// Declare the timer variable outside the function
-  //   List<int> newETAList = List<int>.filled(11, 0);
-  //   List<int> currentETAList = List<int>.filled(11, 0);
-  //   timers[index] = Timer.periodic(Duration(seconds: 1), (_){
-  //     newETAList[index] = indexeta(int.parse(bslist[index].code));
-  //     if (newETAList[index] != currentETAList[index]) {
-  //       currentETAList[index] = newETAList[index];
-  //       if (currentETAList[index] == 0) {
-  //         NotificationService().showNotification(
-  //           title: "Bus Alert System",
-  //           body: "Bus has arrived at ${bslist[index].name}!",
-  //           enableSound: true,
-  //           isSilent: false,
-  //         );
-  //         bslist[index].isAlert = false;
-  //         timers[index].cancel();
-  //       } else {
-  //         NotificationService().showNotification(
-  //           title: "Bus Alert System",
-  //           body: "Bus is arriving at ${bslist[index].name} in ${currentETAList[index]}min",
-  //           enableSound: false,
-  //           isSilent: true,
-  //         );
-  //       }
-  //     }
-  //     else{
-  //       if (newETAList[index] == 0) {
-  //         NotificationService().showNotification(
-  //           title: "Bus Alert System",
-  //           body: "Bus has arrived at ${bslist[index].name}!",
-  //           enableSound: true,
-  //           isSilent: false,
-  //         );
-  //         bslist[index].isAlert = false;
-  //         timers[index].cancel();
-  //       }
-  //     }
-  //   });
-  // }
 
 
   updatevalues() {
