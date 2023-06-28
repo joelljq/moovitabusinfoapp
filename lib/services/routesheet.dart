@@ -48,7 +48,7 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
     'LSCT',
     'Blk 72'
   ];
-
+  //Retrieve the middle bus stops between From and To
   List<String> getMiddleBusStops(int fromIndex, int toIndex) {
     List<String> busStops = [
       'King Albert Park',
@@ -85,7 +85,7 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
 
     return middleBusStops;
   }
-
+  //Get both duration, arrival and departure times
   getBusStatus() {
     fromindex = int.parse(widget.string1);
     toindex = int.parse(widget.string2);
@@ -131,12 +131,6 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
     getBusStatus();
     background = style == false ? Colors.white : Colors.black;
     primary = style == true ? Colors.white : Colors.black;
-  }
-
-  void _toggleMiddleBusStopsExpansion() {
-    setState(() {
-      _isMiddleBusStopsExpanded = !_isMiddleBusStopsExpanded;
-    });
   }
 
   @override

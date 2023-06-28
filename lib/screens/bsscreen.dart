@@ -67,7 +67,7 @@ class _BSScreenState extends State<BSScreen> {
   int currentETA = 0;
   Set<Marker> markers = new Set();
 
-
+  //set the mapstyle based on the dark or light mode
   String mapstyle() {
     String mapstyle;
     if (style == false) {
@@ -77,7 +77,7 @@ class _BSScreenState extends State<BSScreen> {
     }
     return mapstyle;
   }
-
+  //Set the status message
   String status(int currentcode) {
     int index = 0;
     int diff = 0;
@@ -106,7 +106,7 @@ class _BSScreenState extends State<BSScreen> {
     }
     return Status;
   }
-
+  //To get the ETA for each bus stop
   int indexeta(int currentcode) {
     int index = 0;
     int diff = 0;
@@ -149,7 +149,7 @@ class _BSScreenState extends State<BSScreen> {
 
   List<Timer> timers = List<Timer>.filled(11, Timer(Duration.zero, () {}));
 
-
+  //Update the values function
   updatevalues() {
     setState(() {
       busstatus = widget.busstatus;
@@ -163,7 +163,7 @@ class _BSScreenState extends State<BSScreen> {
       primary = style == true ? Colors.white : Colors.black;
     });
   }
-
+  //Initialize values function
   inputvalues() {
     setState(() {
       busstatus = widget.busstatus;
@@ -279,6 +279,7 @@ class _BSScreenState extends State<BSScreen> {
           );
   }
 
+  //List tile for the ListView.builder
   _listitems(index) {
     return Theme(
       data: style ? ThemeData.dark() : ThemeData.light(),
@@ -394,7 +395,7 @@ class _BSScreenState extends State<BSScreen> {
       ),
     );
   }
-
+  //markers for the google map
   Set<Marker> getmarkers() {
     markers = new Set();
     setState(() {

@@ -122,37 +122,38 @@ class _MyAppState extends State<MyApp> {
   final client = MqttServerClient('test.mosquitto.org', '1883');
 
   final TextStyle customTextStyle = TextStyle(fontFamily: 'OpenSans');
-
+  //Saving dark or light mode option in SharedPreferences
   Future<void> saveStyleOption(bool value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('styleOption', value);
   }
-
+  //Retrieving dark or light mode option in SharedPreferences
   Future<bool> getStyleOption() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getBool('styleOption') ?? false;
   }
-
+  //Retrieving default screen option in SharedPreferences
   Future<int> getScreenOption() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt('screenOption') ?? 0;
   }
-
+  //Retrieving auto refresh option in SharedPreferences
   Future<int> getRefreshOption() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt('getRefreshOption') ?? 5;
   }
-
+  //Saving default screen option in SharedPreferences
   Future<void> setScreenOption(int value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setInt('screenOption', value);
   }
-
+  //Saving auto refresh option in SharedPreferences
   Future<void> setRefreshOption(int value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setInt('getRefreshOption', value);
   }
 
+  //Colour variable for bus capacity
   Color hcstatus(String HeadCount) {
     int HeadC = int.parse(HeadCount);
     if (HeadC < 4) {
@@ -164,6 +165,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  //Function to set and retrieve dark or light mode
   void setstyle() {
     setState(() {
       style = !style;
@@ -173,7 +175,7 @@ class _MyAppState extends State<MyApp> {
       primary = style == true ? Colors.white : Colors.black;
     });
   }
-
+  //Retrieve the favourite list from Hive
   void loadFavorites() {
     setState(() {
       favoritesList =
@@ -182,12 +184,12 @@ class _MyAppState extends State<MyApp> {
       updatescreen();
     });
   }
-
+  //Add the bus stop into the Hive database and then load it into favourite list
   void addToFavorites(BusStopClass busStop) {
     favoritesBox.add(busStop); // Add a bus stop to favorites
     loadFavorites(); // Reload the favorites list
   }
-
+  //Remove the bus stop from your favourites
   void removeFromFavorites(BusStopClass busStop) {
     for (BusStopClass favbs in favoritesList) {
       if (busStop.code == favbs.code) {
@@ -196,7 +198,7 @@ class _MyAppState extends State<MyApp> {
     }
     loadFavorites(); // Reload the favorites list
   }
-
+  //To make sure favorite status is aligned with the bus stop list status
   void updateFavoriteStatus() {
     for (BusStopClass busStop in bslist) {
       bool isFavorite = false;
@@ -211,7 +213,7 @@ class _MyAppState extends State<MyApp> {
       busStop.isFavorite = isFavorite;
     }
   }
-
+  //Retrieve fake current locations from json file
   Future<List<CurrentLocationClass>> ReadCurrentLocation() async {
     //read json file
     final jsondata =
@@ -224,7 +226,7 @@ class _MyAppState extends State<MyApp> {
     }
     return currentloc;
   }
-
+  //Bus capacity percentage colour function
   percentaged() {
     setState(() {
       int Heads = int.parse(HC);
@@ -240,14 +242,14 @@ class _MyAppState extends State<MyApp> {
       }
     });
   }
-
+  //function to retrieve nearest minute from the ETA values
   int nearestMinute(String time) {
     Duration duration = Duration(
         minutes: int.parse(time.split(':')[0]),
         seconds: int.parse(time.split(':')[1]));
     return (duration.inSeconds / 60).round();
   }
-
+  //Get the current bus stop number from the API
   Future<String> getCurrentBS() async {
     try {
       var link = Uri.parse('http://$IP/CurrentBusStop');
@@ -263,7 +265,7 @@ class _MyAppState extends State<MyApp> {
     }
     return CurrentBS;
   }
-
+  //Get the ETA values from API
   Future<String> getCurrentETA() async {
     try {
       var link = Uri.parse('http://$IP/ETA');
@@ -279,7 +281,7 @@ class _MyAppState extends State<MyApp> {
     }
     return ETA;
   }
-
+  //Get HeadCount number from API
   Future<String> getHeadCount() async {
     try {
       var link = Uri.parse('http://$IP/Headcount');
@@ -301,12 +303,13 @@ class _MyAppState extends State<MyApp> {
     }
     return _HC;
   }
-
+  //Set the values for the HeadCount
   getHC(String HCC) {
     HC = HCC;
     percentaged();
   }
 
+  //Set the status
   getBusStatus(String ETAA) async {
     int index = 0;
     if (ETAA == "") {
@@ -359,6 +362,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  //
   getdisplayindex(String CBS) {
     setState(() {
       CurrentBSS = CBS;
@@ -448,6 +452,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  //To handle the user's permission
   Future<bool> _handleLocationPermission() async {
     bool serviceready;
     LocationPermission perms;

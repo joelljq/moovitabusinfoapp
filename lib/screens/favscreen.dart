@@ -62,7 +62,7 @@ class _FavScreenState extends State<FavScreen> {
   late Color background;
   late Color primary;
   late Color busstatus;
-
+  //set the mapstyle based on the dark or light mode
   String mapstyle() {
     String mapstyle;
     if (style == false) {
@@ -72,7 +72,7 @@ class _FavScreenState extends State<FavScreen> {
     }
     return mapstyle;
   }
-
+  //Set the status message
   String status(int currentcode) {
     int index = 0;
     int diff = 0;
@@ -102,6 +102,7 @@ class _FavScreenState extends State<FavScreen> {
     return Status;
   }
 
+  //To get the ETA for each bus stop
   int indexeta(int currentcode) {
     int index = 0;
     int diff = 0;
@@ -155,32 +156,7 @@ class _FavScreenState extends State<FavScreen> {
 
   late Timer indextimer;
 
-  // void startTimer(int index) {
-  //   indextimer = Timer.periodic(Duration(seconds: 1), (_) {
-  //     // Fetch the current ETA for the selected bus stop
-  //     final newETA = indexeta(int.parse(bslist[index].code));
-  //     if (newETA != currentETA) {
-  //       currentETA = newETA;
-  //       if (currentETA == 0) {
-  //         // Trigger the alert when ETA reaches 0
-  //         indextimer.cancel();
-  //         NotificationService().showNotification(
-  //             title: "Bus Alert System",
-  //             body: "Bus has arrived at ${bslist[index].name}!",
-  //             enableSound: true); // Stop the timer after the alert
-  //         bslist[index].isAlert = false;
-  //       } else {
-  //         NotificationService().showNotification(
-  //             title: "Bus Alert System",
-  //             body:
-  //                 "Bus is arriving at ${bslist[index].name} in ${currentETA}min",
-  //             isSilent: true,
-  //             enableSound: false);
-  //       }
-  //     }
-  //   });
-  // }
-
+  //Update the values function
   updatevalues() {
     setState(() {
       // print("FavScreen");
@@ -195,7 +171,7 @@ class _FavScreenState extends State<FavScreen> {
       primary = style == true ? Colors.white : Colors.black;
     });
   }
-
+  //Initialize values function
   inputvalues() {
     setState(() {
       busstatus = widget.busstatus;
@@ -351,7 +327,7 @@ class _FavScreenState extends State<FavScreen> {
             ],
           );
   }
-
+  //List tile for the ListView.builder
   _listitems(index) {
     return Theme(
       data: style ? ThemeData.dark() : ThemeData.light(),
@@ -458,7 +434,7 @@ class _FavScreenState extends State<FavScreen> {
           )),
     );
   }
-
+  //markers for the google map
   Set<Marker> getmarkers() {
     markers = new Set();
     setState(() {
