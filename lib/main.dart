@@ -654,9 +654,12 @@ class _MyAppState extends State<MyApp> {
 
   void startTimer(String code) {
     int index = bslist.indexWhere((bs) => bs.code == code);
-    int favindex = favoritesList.indexWhere((fbs) => fbs.code == code);
+    int favindex = 0;
+    if (favoritesList.any((favorite) => favorite.code == bslist[index].code)){
+      favindex = favoritesList.indexWhere((fbs) => fbs.code == code);
+      favoritesList[favindex].isAlert = true;
+    }
     bslist[index].isAlert = true;
-    favoritesList[favindex].isAlert = true;
     List<int> newETAList = List<int>.filled(11, 0);
     List<int> currentETAList = List<int>.filled(11, 0);
     timers[index] = Timer.periodic(Duration(seconds: 1), (_) {
@@ -671,7 +674,9 @@ class _MyAppState extends State<MyApp> {
             isSilent: false,
           );
           bslist[index].isAlert = false;
-          favoritesList[favindex].isAlert = false;
+          if (favoritesList.contains(code)){
+            favoritesList[favindex].isAlert = false;
+          }
           timers[index].cancel();
         } else {
           NotificationService().showNotification(
@@ -691,7 +696,9 @@ class _MyAppState extends State<MyApp> {
             isSilent: false,
           );
           bslist[index].isAlert = false;
-          favoritesList[favindex].isAlert = false;
+          if (favoritesList.contains(code)){
+            favoritesList[favindex].isAlert = false;
+          }
           timers[index].cancel();
         }
       }

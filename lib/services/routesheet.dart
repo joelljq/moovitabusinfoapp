@@ -128,7 +128,6 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
   @override
   void initState() {
     super.initState();
-    print("hi");
     getBusStatus();
     background = style == false ? Colors.white : Colors.black;
     primary = style == true ? Colors.white : Colors.black;
@@ -271,7 +270,6 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
                         onExpansionChanged: (isExpanded) {
                           setState(() {
                             _isMiddleBusStopsExpanded = isExpanded;
-                            print(_isMiddleBusStopsExpanded);
                           });
                         },
                         children: [
