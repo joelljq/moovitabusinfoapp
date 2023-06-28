@@ -362,7 +362,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  //
+  //To show the current bus stop index for the list
   getdisplayindex(String CBS) {
     setState(() {
       CurrentBSS = CBS;
@@ -375,7 +375,7 @@ class _MyAppState extends State<MyApp> {
       }
     });
   }
-
+  //Check for currenttime(Might not need it anymore)
   Future<bool> timeCheck() async {
     var currentTime = DateTime.now();
     var startTime1 =

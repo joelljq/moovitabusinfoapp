@@ -64,7 +64,7 @@ class _RouteScreenState extends State<RouteScreen> {
   late Color primary;
   late bool style;
 
-
+  //Function to show the bottom sheet
   void showCustomBottomSheet(BuildContext context) {
     showModalBottomSheet(
       backgroundColor: Colors.transparent,
@@ -104,7 +104,7 @@ class _RouteScreenState extends State<RouteScreen> {
     super.dispose();
     updatetimer.cancel();
   }
-
+  //Update values that gets updated in main.dart
   updatevalues() {
     setState(() {
       style = widget.style;
@@ -116,7 +116,7 @@ class _RouteScreenState extends State<RouteScreen> {
       primary = style == true ? Colors.white : Colors.black;
     });
   }
-
+  //swap values for From and To
   void swapValues() {
     setState(() {
       String newFrom = '';
