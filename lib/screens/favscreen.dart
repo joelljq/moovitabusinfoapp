@@ -62,6 +62,8 @@ class _FavScreenState extends State<FavScreen> {
   late Color background;
   late Color primary;
   late Color busstatus;
+  String Locations = '';
+  String ETAs = '';
   //set the mapstyle based on the dark or light mode
   String mapstyle() {
     String mapstyle;
@@ -147,6 +149,17 @@ class _FavScreenState extends State<FavScreen> {
       updatevalues();
     });
   }
+  //To determine the labels for the current bus location marker
+  BusLocation(){
+    if (curpos.latitude == 0.0){
+      Locations = "Bus is not operating";
+      ETAs = "TBA Mins";
+    }
+    else{
+      Locations = "Current Bus Location ${currentbusindex}";
+      ETAs = "${widget.ETA} Mins";
+    }
+  }
 
   @override
   void dispose() {
@@ -169,6 +182,11 @@ class _FavScreenState extends State<FavScreen> {
       mapController.setMapStyle(mapstyle());
       background = style == false ? Colors.white : Colors.black;
       primary = style == true ? Colors.white : Colors.black;
+      BusLocation();
+      if (curpos.latitude == 0.0){
+        int index = bslist.indexWhere((bs) => bs.name == "Block 37");
+        curpos = LatLng(bslist[index].lat, bslist[index].lng);
+      }
     });
   }
   //Initialize values function
@@ -182,6 +200,11 @@ class _FavScreenState extends State<FavScreen> {
       style = widget.style;
       background = style == false ? Colors.white : Colors.black;
       primary = style == true ? Colors.white : Colors.black;
+      BusLocation();
+      if (curpos.latitude == 0.0){
+        int index = bslist.indexWhere((bs) => bs.name == "Block 37");
+        curpos = LatLng(bslist[index].lat, bslist[index].lng);
+      }
     });
   }
 
@@ -460,8 +483,8 @@ class _FavScreenState extends State<FavScreen> {
           //position of marker
           infoWindow: InfoWindow(
               //popup info
-              title: "Current Bus Location ${currentbusindex}",
-              snippet: "${widget.ETA}"),
+              title: Locations,
+              snippet: ETAs),
           icon: markerbitmap2,
           onTap: () {
             setState(() {

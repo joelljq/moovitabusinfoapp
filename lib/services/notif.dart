@@ -8,6 +8,7 @@ class NotificationService {
     AndroidInitializationSettings initializationSettingsAndroid =
     const AndroidInitializationSettings('moovita1');
 
+
     var initializationSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -44,6 +45,7 @@ class NotificationService {
 
     return NotificationDetails(android: androidPlatformChannelSpecifics);
   }
+
 
   Future<void> showNotification({
     int id = 0,

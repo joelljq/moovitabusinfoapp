@@ -403,7 +403,7 @@ class _MyAppState extends State<MyApp> {
     RTC = DateFormat.Hm().format(currentTime);
     return timechecked;
   }
-
+  //Send the alert to the bus captain
   void _sendMessage(String busstop, String status) async {
     await client.connect();
     if (client.connectionStatus?.state == MqttConnectionState.connected) {
@@ -447,8 +447,14 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       int index = buspos.indexWhere((buspos) =>
           buspos.Route == "${currentbsindex.toString()}.${cureta.toString()}");
-      curlat = buspos[index].lat;
-      curlng = buspos[index].lng;
+      if (index < 0){
+        curlat = buspos[8].lat;
+        curlng = buspos[8].lat;
+      }
+      else{
+        curlat = buspos[index].lat;
+        curlng = buspos[index].lng;
+      }
     });
   }
 
@@ -921,7 +927,6 @@ class _MyAppState extends State<MyApp> {
                               _screenIndex = value;
                             });
                           });
-                          print(_screenIndex);
                           Navigator.pop(context);
                           Navigator.push(
                             context,

@@ -63,6 +63,8 @@ class _BSScreenState extends State<BSScreen> {
   late Color background;
   late Color primary;
   late Color busstatus;
+  String ETAs = '';
+  String Locations = '';
   late GlobalKey<ScaffoldState> _scaffoldKey = widget.scaffoldkey;
   int currentETA = 0;
   Set<Marker> markers = new Set();
@@ -76,6 +78,17 @@ class _BSScreenState extends State<BSScreen> {
       mapstyle = darkStyle;
     }
     return mapstyle;
+  }
+  //To determine the labels for the current bus location marker
+  BusLocation(){
+    if (curpos.latitude == 0.0){
+      Locations = "Bus is not operating";
+      ETAs = "TBA Mins";
+    }
+    else{
+      Locations = "Current Bus Location ${currentbusindex}";
+      ETAs = "${widget.ETA} Mins";
+    }
   }
   //Set the status message
   String status(int currentcode) {
@@ -133,6 +146,7 @@ class _BSScreenState extends State<BSScreen> {
   @override
   void initState() {
     super.initState();
+
     inputvalues();
     updatetimer = new Timer.periodic(Duration(seconds: 1), (_) {
       updatevalues();
@@ -161,6 +175,11 @@ class _BSScreenState extends State<BSScreen> {
       mapController.setMapStyle(mapstyle());
       background = style == false ? Colors.white : Colors.black;
       primary = style == true ? Colors.white : Colors.black;
+      BusLocation();
+      if (curpos.latitude == 0.0){
+        int index = bslist.indexWhere((bs) => bs.name == "Block 37");
+        curpos = LatLng(bslist[index].lat, bslist[index].lng);
+      }
     });
   }
   //Initialize values function
@@ -174,6 +193,11 @@ class _BSScreenState extends State<BSScreen> {
       style = widget.style;
       background = style == false ? Colors.white : Colors.black;
       primary = style == true ? Colors.white : Colors.black;
+      BusLocation();
+      if (curpos.latitude == 0.0){
+        int index = bslist.indexWhere((bs) => bs.name == "Block 37");
+        curpos = LatLng(bslist[index].lat, bslist[index].lng);
+      }
     });
   }
 
@@ -421,8 +445,8 @@ class _BSScreenState extends State<BSScreen> {
           //position of marker
           infoWindow: InfoWindow(
               //popup info
-              title: "Current Bus Location ${currentbusindex}",
-              snippet: "${widget.ETA}"),
+              title: Locations,
+              snippet: ETAs),
           icon: markerbitmap2,
           onTap: () {
             setState(() {
