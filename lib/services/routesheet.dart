@@ -91,29 +91,35 @@ class _BottomSheetWidgetState extends State<BottomSheetWidget> {
     toindex = int.parse(widget.string2);
     etaa = int.parse(widget.string3);
     mybs = int.parse(widget.string4);
-    if (etaa != 0) {
-      if (mybs > 1) {
-        mybs = mybs - 1;
-      } else if (mybs < 1) {
-        mybs = mybs;
-      }
-    } else if (etaa == 0) {
-      mybs = mybs;
-    }
+    // if (etaa != 0) {
+    //   if (mybs > 1) {
+    //     mybs = mybs - 1;
+    //   } else if (mybs < 1) {
+    //     mybs = mybs;
+    //   }
+    // } else if (etaa == 0) {
+    //   mybs = mybs;
+    // }
+    print(fromindex.toString());
 
     int diff = 0;
     int diff2 = 0;
     diff = fromindex - mybs;
     diff2 = toindex - fromindex;
+    print(diff.toString());
+    print(etaa.toString());
     if (diff > 1) {
       etaa = etaa + (3 * diff);
     } else if (diff < 0) {
       etaa = etaa + (3 * (11 + diff));
     } else if (diff == 0) {
-      if (etaa > 0) {}
+      if (etaa > 0) {
+        etaa = etaa;
+      }
     } else if (diff == 1) {
       etaa = etaa + 3;
     }
+    print(etaa.toString());
     DateTime now = DateTime.now();
     DateTime depart = now.add(Duration(minutes: etaa));
     departure = DateFormat.Hm().format(depart);
