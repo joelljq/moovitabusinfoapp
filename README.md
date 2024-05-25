@@ -6,4 +6,4 @@ A Bus information commercial application made for users of Moovita shuttle bus s
 3. Alert notification system
 4. Route planner
 
-![Image Alt Text](https://imgur.com/a/6vDJLSJ)
+![Image Alt Text](https://i.imgur.com/CxjwjCt.jpeg)
